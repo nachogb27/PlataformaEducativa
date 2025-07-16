@@ -9,13 +9,14 @@ const { User, Role, Subject, StudentsTeachersRelation, Session } = require('./in
 const app = express();
 const PORT = 3000;
 const JWT_SECRET = 'tu_clave_secreta_jwt';
+const TEACHER_TOKEN = '3rhb23uydb238ry6g2429hrh'; // Token global para profesores
 
 // Configurar Nodemailer
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'tu_email_del_proyecto@gmail.com',
-    pass: 'tu_contraseña_de_aplicacion'
+    user: 'plataforma.educativa.proyecto@gmail.com',
+    pass: 'wyus erdh hgqp vvcs'
   }
 });
 
@@ -84,7 +85,107 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// SOLICITUD DE RECUPERACIÓN DE CONTRASEÑA
+// REGISTRO DE USUARIO
+app.post('/api/register', async (req, res) => {
+  try {
+    const { name, surnames, username, email, password, confirmPassword, role, teacherToken } = req.body;
+    
+    // Validar que las contraseñas coincidan
+    if (password !== confirmPassword) {
+      return res.status(400).json({ error: 'Las contraseñas no coinciden' });
+    }
+
+    // Validar email con regex
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'Email inválido' });
+    }
+
+    // Verificar que el username no exista
+    const existingUser = await User.findOne({ where: { username: username } });
+    if (existingUser) {
+      return res.status(409).json({ error: 'El nombre de usuario ya existe' });
+    }
+
+    // Verificar token de profesor si el rol es teacher
+    const roleId = role === 'teacher' ? 2 : 1;
+    if (roleId === 2) {
+      if (!teacherToken || teacherToken !== TEACHER_TOKEN) {
+        return res.status(403).json({ error: 'Token de profesor inválido' });
+      }
+    }
+
+    // Generar token de activación
+    const activationToken = uuidv4();
+
+    // Crear usuario inactivo
+    const newUser = await User.create({
+      name,
+      surnames,
+      username,
+      email,
+      role: roleId,
+      password_token: password,
+      access_token: activationToken,
+      active: 0
+    });
+
+    // Enviar email de activación
+    const activationUrl = `http://localhost:8080/activate-account?token=${activationToken}`;
+    
+    const mailOptions = {
+      from: 'tu_email_del_proyecto@gmail.com',
+      to: email,
+      subject: 'Activar cuenta - Plataforma Educativa',
+      html: `
+        <h2>¡Bienvenido a la Plataforma Educativa!</h2>
+        <p>Hola ${name},</p>
+        <p>Tu cuenta ha sido creada exitosamente. Para completar el registro, necesitas activar tu cuenta.</p>
+        <p>Haz clic en el siguiente botón para activar tu cuenta:</p>
+        <a href="${activationUrl}" style="background-color: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">
+          Activar Cuenta
+        </a>
+        <p>Si no puedes hacer clic en el botón, copia y pega esta URL en tu navegador:</p>
+        <p>${activationUrl}</p>
+        <p>Saludos,<br>Equipo de Plataforma Educativa</p>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({ 
+      message: 'Usuario registrado exitosamente. Revisa tu email para activar la cuenta.',
+      userId: newUser.id 
+    });
+  } catch (error) {
+    console.error('Error en registro:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// ACTIVACIÓN DE CUENTA
+app.post('/api/activate-account', async (req, res) => {
+  try {
+    const { token } = req.body;
+    
+    // Buscar usuario por token de activación
+    const user = await User.findOne({
+      where: { access_token: token, active: 0 }
+    });
+
+    if (!user) {
+      return res.status(403).json({ error: 'Token de activación inválido o cuenta ya activada' });
+    }
+
+    // Activar usuario
+    user.active = 1;
+    await user.save();
+
+    res.json({ message: 'Cuenta activada exitosamente. Ya puedes iniciar sesión.' });
+  } catch (error) {
+    console.error('Error en activación:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
 app.post('/api/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
