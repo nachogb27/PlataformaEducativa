@@ -30,6 +30,16 @@ async function createTestData() {
       active: 1
     });
 
+    const teacher2 = await User.create({
+      username: 'fernandoalonso',
+      name: 'Fernando',
+      surnames: 'Alonso',
+      email: 'fernando.alonso@email.com',
+      role: 2,
+      password_token: '123456',
+      active: 0
+    });
+
     // Crear relaciones estudiante-profesor-asignatura
     await StudentsTeachersRelation.create({
       id_student: student.id,
