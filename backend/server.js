@@ -14,8 +14,8 @@ const JWT_SECRET = 'tu_clave_secreta_jwt';
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'plataforma.educativa.proyecto@gmail.com',
-    pass: 'vswm utjz potr fpul'
+    user: 'tu_email_del_proyecto@gmail.com',
+    pass: 'tu_contraseña_de_aplicacion'
   }
 });
 
@@ -47,7 +47,12 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
 
-    // Por ahora, validamos con password_token (puedes cambiar por hash)
+    // Verificar si la cuenta está activada
+    if (user.active === 0) {
+      return res.status(403).json({ error: 'La cuenta no está activada' });
+    }
+
+    // Validar contraseña
     if (user.password_token !== password) {
       return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
@@ -112,7 +117,7 @@ app.post('/api/forgot-password', async (req, res) => {
     const resetUrl = `http://localhost:8080/reset-password?token=${resetToken}`;
     
     const mailOptions = {
-      from: 'plataforma.educativa.proyecto@gmail.com',
+      from: 'tu_email@gmail.com',
       to: email,
       subject: 'Recuperación de contraseña - Plataforma Educativa',
       html: `
