@@ -26,6 +26,43 @@
         <h2>Mis Estudiantes</h2>
       </div>
       
+      <!-- Filtros de búsqueda -->
+      <div class="search-filters">
+        <div class="filter-group">
+          <label>Buscar por nombre:</label>
+          <div class="input-with-clear">
+            <input 
+              type="text" 
+              v-model="filters.name"
+              placeholder="Escribe el nombre del estudiante..."
+              class="search-input"
+            />
+            <button @click="clearNameFilter" class="clear-button" title="Limpiar búsqueda">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <div class="filter-group">
+          <label>Buscar por email:</label>
+          <div class="input-with-clear">
+            <input 
+              type="text" 
+              v-model="filters.email"
+              placeholder="Escribe el email del estudiante..."
+              class="search-input"
+            />
+            <button @click="clearEmailFilter" class="clear-button" title="Limpiar búsqueda">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      
       <div v-if="loading" class="loading">
         <div class="spinner"></div>
         <p>Cargando estudiantes...</p>
@@ -35,62 +72,106 @@
         {{ error }}
       </div>
       
-      <div v-else class="table-container">
-        <table class="students-table">
-          <thead>
-            <tr>
-              <th>Nombre del alumno</th>
-              <th>Apellidos del alumno</th>
-              <th>Email del alumno</th>
-              <th>Nombre de la asignatura</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="student in students" :key="student.id">
-              <td>
-                <div class="student-cell">
-                  <div v-if="student.avatar" class="student-avatar-image">
-                    <img :src="student.avatar" :alt="student.name" class="avatar-img" />
+      <div v-else>
+        <div class="table-container">
+          <table class="students-table">
+            <thead>
+              <tr>
+                <th>Nombre del alumno</th>
+                <th>Apellidos del alumno</th>
+                <th>Email del alumno</th>
+                <th>Nombre de la asignatura</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="student in paginatedStudents" :key="`${student.id}-${student.subject}`">
+                <td>
+                  <div class="student-cell">
+                    <div v-if="student.avatar" class="student-avatar-image">
+                      <img :src="student.avatar" :alt="student.name" class="avatar-img" />
+                    </div>
+                    <div v-else class="student-avatar">{{ student.name.charAt(0) }}</div>
+                    <span class="student-name">{{ student.name }}</span>
                   </div>
-                  <div v-else class="student-avatar">{{ student.name.charAt(0) }}</div>
-                  <span class="student-name">{{ student.name }}</span>
-                </div>
-              </td>
-              <td>
-                <span class="student-surname">{{ student.lastName }}</span>
-              </td>
-              <td>
-                <span class="student-email">{{ student.email }}</span>
-              </td>
-              <td>
-                <span class="subject-badge">{{ student.subject }}</span>
-              </td>
-              <td>
-                <div class="action-buttons">
-                  <button 
-                    @click="editStudent(student)" 
-                    class="action-button edit-button"
-                    title="Editar estudiante"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25ZM20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="currentColor"/>
-                    </svg>
-                  </button>
-                  <button 
-                    @click="deleteStudent(student)" 
-                    class="action-button delete-button"
-                    title="Eliminar estudiante"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z" fill="currentColor"/>
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </td>
+                <td>
+                  <span class="student-surname">{{ student.lastName }}</span>
+                </td>
+                <td>
+                  <span class="student-email">{{ student.email }}</span>
+                </td>
+                <td>
+                  <span class="subject-badge">{{ student.subject }}</span>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <button 
+                      @click="editStudent(student)" 
+                      class="action-button edit-button"
+                      title="Editar estudiante"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25ZM20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="currentColor"/>
+                      </svg>
+                    </button>
+                    <button 
+                      @click="deleteStudent(student)" 
+                      class="action-button delete-button"
+                      title="Eliminar estudiante"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z" fill="currentColor"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Paginación -->
+        <div class="pagination-container">
+          <div class="pagination-info">
+            Mostrando {{ startIndex + 1 }} - {{ endIndex }} de {{ filteredStudents.length }} estudiantes
+          </div>
+          
+          <div class="pagination-controls">
+            <button 
+              @click="goToPage(currentPage - 1)"
+              :disabled="currentPage === 1"
+              class="pagination-button"
+              title="Página anterior"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41Z" fill="currentColor"/>
+              </svg>
+            </button>
+            
+            <span class="page-numbers">
+              <button 
+                v-for="page in visiblePages" 
+                :key="page"
+                @click="goToPage(page)"
+                :class="['page-button', { active: page === currentPage }]"
+              >
+                {{ page }}
+              </button>
+            </span>
+            
+            <button 
+              @click="goToPage(currentPage + 1)"
+              :disabled="currentPage === totalPages"
+              class="pagination-button"
+              title="Página siguiente"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8.59 16.59L10 18L16 12L10 6L8.59 7.41L13.17 12L8.59 16.59Z" fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -162,14 +243,93 @@ export default {
         name: '',
         surnames: ''
       },
+    
+    // Métodos de filtrado
+    clearNameFilter() {
+      this.filters.name = '';
+    },
+    
+    clearEmailFilter() {
+      this.filters.email = '';
+    },
+    
+    // Métodos de paginación
+    goToPage(page) {
+      if (page >= 1 && page <= this.totalPages) {
+        this.currentPage = page;
+      }
+    },
       editError: '',
-      saving: false
+      saving: false,
+      // Filtros y paginación
+      filters: {
+        name: '',
+        email: ''
+      },
+      currentPage: 1,
+      pageSize: 5
     }
   },
   async mounted() {
     await this.loadStudents()
   },
   computed: {
+    filteredStudents() {
+      let filtered = this.students;
+      
+      // Filtrar por nombre
+      if (this.filters.name.trim()) {
+        filtered = filtered.filter(student => 
+          student.name.toLowerCase().includes(this.filters.name.toLowerCase()) ||
+          student.lastName.toLowerCase().includes(this.filters.name.toLowerCase())
+        );
+      }
+      
+      // Filtrar por email
+      if (this.filters.email.trim()) {
+        filtered = filtered.filter(student => 
+          student.email.toLowerCase().includes(this.filters.email.toLowerCase())
+        );
+      }
+      
+      return filtered;
+    },
+    
+    totalPages() {
+      return Math.ceil(this.filteredStudents.length / this.pageSize);
+    },
+    
+    startIndex() {
+      return (this.currentPage - 1) * this.pageSize;
+    },
+    
+    endIndex() {
+      return Math.min(this.startIndex + this.pageSize, this.filteredStudents.length);
+    },
+    
+    paginatedStudents() {
+      return this.filteredStudents.slice(this.startIndex, this.endIndex);
+    },
+    
+    visiblePages() {
+      const pages = [];
+      const start = Math.max(1, this.currentPage - 2);
+      const end = Math.min(this.totalPages, this.currentPage + 2);
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      return pages;
+    }
+  },
+  watch: {
+    'filters.name'() {
+      this.currentPage = 1;
+    },
+    'filters.email'() {
+      this.currentPage = 1;
+    }
   },
   methods: {
     async loadStudents() {
@@ -719,5 +879,162 @@ export default {
   background: #a0aec0;
   cursor: not-allowed;
   transform: none;
+}
+
+/* Estilos para filtros */
+.search-filters {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group label {
+  color: #4a5568;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.input-with-clear {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.clear-button {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-button:hover {
+  background: #f7fafc;
+  color: #4a5568;
+}
+
+/* Estilos para paginación */
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.pagination-info {
+  color: #718096;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #4a5568;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+.pagination-button:disabled {
+  background: #f7fafc;
+  color: #cbd5e0;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 4px;
+}
+
+.page-button {
+  width: 36px;
+  height: 36px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.page-button:hover {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+.page-button.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+@media (max-width: 768px) {
+  .search-filters {
+    grid-template-columns: 1fr;
+  }
+  
+  .pagination-container {
+    flex-direction: column;
+    gap: 16px;
+  }
 }
 </style>

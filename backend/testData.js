@@ -2,7 +2,7 @@ const { User, StudentsTeachersRelation, sequelize } = require('./index');
 
 async function createTestData() {
   try {
-    // Sincronizar tablas (esto recreará las tablas con la nueva columna avatar)
+    // Sincronizar tablas
     console.log('Sincronizando base de datos...');
     await sequelize.sync({ force: true });
     
@@ -10,57 +10,87 @@ async function createTestData() {
     await StudentsTeachersRelation.destroy({ where: {} });
     await User.destroy({ where: {} });
     
-    console.log('Creando nuevos usuarios...');
+    console.log('Creando usuarios...');
     
-    // Usuario activo
-    const student = await User.create({
-      username: 'estudiante1',
-      name: 'Juan',
-      surnames: 'Pérez García',
-      email: 'nachogb@usal.es',
-      role: 1,
-      password_token: '123456',
-      active: 1
-    });
+    // Crear 10 estudiantes
+    const students = [];
+    const studentNames = [
+      { name: 'Juan', surname: 'Pérez García', email: 'juan.perez@usal.es' },
+      { name: 'María', surname: 'González López', email: 'maria.gonzalez@usal.es' },
+      { name: 'Carlos', surname: 'Ruiz Martín', email: 'carlos.ruiz@usal.es' },
+      { name: 'Ana', surname: 'Jiménez Ramos', email: 'ana.jimenez@usal.es' },
+      { name: 'Luis', surname: 'Hernández Vila', email: 'luis.hernandez@usal.es' },
+      { name: 'Elena', surname: 'Moreno Sanz', email: 'elena.moreno@usal.es' },
+      { name: 'David', surname: 'Torres Blanco', email: 'david.torres@usal.es' },
+      { name: 'Laura', surname: 'Romero Cruz', email: 'laura.romero@usal.es' },
+      { name: 'Pablo', surname: 'Vargas Díez', email: 'pablo.vargas@usal.es' },
+      { name: 'Carmen', surname: 'Delgado Vega', email: 'carmen.delgado@usal.es' }
+    ];
 
-    // Usuario inactivo para probar
-    const inactiveUser = await User.create({
+    for (let i = 0; i < studentNames.length; i++) {
+      const student = await User.create({
+        username: `estudiante${i + 1}`,
+        name: studentNames[i].name,
+        surnames: studentNames[i].surname,
+        email: studentNames[i].email,
+        role: 1,
+        password_token: '1234',
+        active: 1
+      });
+      students.push(student);
+    }
+
+    // Crear 5 profesores
+    const teachers = [];
+    const teacherData = [
+      { name: 'Roberto', surname: 'García Fernández', email: 'roberto.garcia@usal.es', subject: 1 }, // Inglés
+      { name: 'Isabel', surname: 'López Martínez', email: 'isabel.lopez@usal.es', subject: 2 }, // Lengua Castellana
+      { name: 'Miguel', surname: 'Rodríguez Santos', email: 'miguel.rodriguez@usal.es', subject: 9 }, // Matemáticas
+      { name: 'Patricia', surname: 'Sánchez Ruiz', email: 'patricia.sanchez@usal.es', subject: 7 }, // Historia
+      { name: 'Fernando', surname: 'Martín Iglesias', email: 'fernando.martin@usal.es', subject: 3 } // Física
+    ];
+
+    for (let i = 0; i < teacherData.length; i++) {
+      const teacher = await User.create({
+        username: `profesor${i + 1}`,
+        name: teacherData[i].name,
+        surnames: teacherData[i].surname,
+        email: teacherData[i].email,
+        role: 2,
+        password_token: '1234',
+        active: 1
+      });
+      teachers.push({ ...teacher.toJSON(), subjectId: teacherData[i].subject });
+    }
+
+    // Crear un usuario inactivo para probar
+    await User.create({
       username: 'inactivo1',
       name: 'Usuario',
       surnames: 'Inactivo',
       email: 'inactivo@test.com',
       role: 1,
-      password_token: '123456',
+      password_token: '1234',
       active: 0
     });
 
-    const teacher = await User.create({
-      username: 'profesor1',
-      name: 'María',
-      surnames: 'González López',
-      email: 'maria.gonzalez@email.com',
-      role: 2,
-      password_token: '123456',
-      active: 1
-    });
-
-    // Crear relaciones estudiante-profesor-asignatura
-    await StudentsTeachersRelation.create({
-      id_student: student.id,
-      id_teacher: teacher.id,
-      id_subject: 1 // Inglés
-    });
-
-    await StudentsTeachersRelation.create({
-      id_student: student.id,
-      id_teacher: teacher.id,
-      id_subject: 9 // Matemáticas
-    });
+    // Crear relaciones: cada estudiante cursa todas las asignaturas de los profesores
+    console.log('Creando relaciones estudiante-profesor-asignatura...');
+    for (const student of students) {
+      for (const teacher of teachers) {
+        await StudentsTeachersRelation.create({
+          id_student: student.id,
+          id_teacher: teacher.id,
+          id_subject: teacher.subjectId
+        });
+      }
+    }
 
     console.log('Datos de prueba creados exitosamente');
-    console.log('Usuario activo:', student.username, '/ 123456');
-    console.log('Usuario inactivo:', inactiveUser.username, '/ 123456');
-    console.log('Usuario profesor:', teacher.username, '/ 123456');
+    console.log(`- ${students.length} estudiantes creados`);
+    console.log(`- ${teachers.length} profesores creados`);
+    console.log(`- ${students.length * teachers.length} relaciones creadas`);
+    console.log('Contraseña para todos: 1234');
     
   } catch (error) {
     console.error('Error creando datos de prueba:', error);
