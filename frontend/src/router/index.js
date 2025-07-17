@@ -8,6 +8,8 @@ import ActivateAccountView from '../views/ActivateAccountView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import StudentDashboard from '../views/StudentDashboard.vue'
 import TeacherDashboard from '../views/TeacherDashboard.vue'
+import NotFoundView from '../views/NotFoundView.vue'
+import ErrorView from '../views/ErrorView.vue'
 
 Vue.use(VueRouter)
 
@@ -34,7 +36,19 @@ const routes = [
   {
     path: '/reset-password',
     name: 'ResetPassword',
-    component: ResetPasswordView
+    component: ResetPasswordView,
+    // 🔒 Validación: Impedir acceso sin token
+    beforeEnter: (to, from, next) => {
+      const resetToken = to.query.token;
+      
+      if (!resetToken || resetToken.trim() === '') {
+        console.log('❌ Acceso denegado: No se proporcionó reset_token');
+        next('/forgot-password');
+      } else {
+        console.log('✅ Acceso permitido: Token proporcionado');
+        next();
+      }
+    }
   },
   {
     path: '/activate-account',
@@ -59,9 +73,18 @@ const routes = [
     component: TeacherDashboard,
     meta: { requiresAuth: true, role: 'teacher' }
   },
+  // 🆕 Nueva ruta para errores con código específico
+  {
+    path: '/error/:code?',
+    name: 'Error',
+    component: ErrorView,
+    props: true
+  },
+  // 🆕 Ruta 404 - DEBE IR AL FINAL
   {
     path: '*',
-    redirect: '/login'
+    name: 'NotFound', 
+    component: NotFoundView
   }
 ]
 
@@ -70,7 +93,7 @@ const router = new VueRouter({
   routes
 })
 
-// Guard para proteger rutas
+// Guard para proteger rutas autenticadas
 router.beforeEach((to, from, next) => {
   // Importar authService dinámicamente para evitar problemas de importación circular
   import('../services/authService').then(({ default: authService }) => {
