@@ -451,16 +451,23 @@ app.get('/api/profile', async (req, res) => {
   }
 });
 
-// ACTUALIZAR AVATAR
-app.post('/api/profile/avatar', upload.single('avatar'), async (req, res) => {
+// ACTUALIZAR AVATAR (base64)
+app.post('/api/profile/avatar', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({ error: 'Token requerido' });
 
     const decoded = jwt.verify(token, JWT_SECRET);
+    const { image, filename } = req.body;
     
-    if (!req.file) {
-      return res.status(400).json({ error: 'No se ha subido ningún archivo' });
+    if (!image) {
+      return res.status(400).json({ error: 'No se ha enviado ninguna imagen' });
+    }
+
+    // Verificar que es base64 válido
+    const base64Regex = /^data:image\/(jpeg|jpg|png|gif);base64,/;
+    if (!base64Regex.test(image)) {
+      return res.status(400).json({ error: 'Formato de imagen inválido. Use base64.' });
     }
 
     const user = await User.findByPk(decoded.userId);
@@ -468,19 +475,38 @@ app.post('/api/profile/avatar', upload.single('avatar'), async (req, res) => {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
+    // Extraer el tipo de imagen y los datos base64
+    const matches = image.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
+    const imageType = matches[1];
+    const base64Data = matches[2];
+
+    // Crear directorio si no existe
+    const uploadDir = './uploads/avatars/';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    // Generar nombre único para el archivo
+    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + '.' + imageType;
+    const filePath = path.join(uploadDir, uniqueName);
+
     // Eliminar avatar anterior si existe
     if (user.avatar) {
-      const oldAvatarPath = path.join('./uploads/avatars/', user.avatar);
+      const oldAvatarPath = path.join(uploadDir, user.avatar);
       if (fs.existsSync(oldAvatarPath)) {
         fs.unlinkSync(oldAvatarPath);
       }
     }
 
+    // Convertir base64 a archivo y guardarlo
+    const buffer = Buffer.from(base64Data, 'base64');
+    fs.writeFileSync(filePath, buffer);
+
     // Actualizar usuario con nuevo avatar
-    user.avatar = req.file.filename;
+    user.avatar = uniqueName;
     await user.save();
 
-    const avatarUrl = `http://localhost:${PORT}/uploads/avatars/${req.file.filename}`;
+    const avatarUrl = `http://localhost:${PORT}/uploads/avatars/${uniqueName}`;
     
     res.json({ 
       message: 'Avatar actualizado exitosamente',

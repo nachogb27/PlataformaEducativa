@@ -35,7 +35,13 @@
               <div v-else class="avatar-placeholder">
                 {{ profile.name.charAt(0) }}{{ profile.surnames.charAt(0) }}
               </div>
-              <button @click="triggerFileInput" class="change-avatar-button" title="Cambiar foto">
+              
+              <!-- Indicador de carga -->
+              <div v-if="uploadingAvatar" class="upload-overlay">
+                <div class="upload-spinner"></div>
+              </div>
+              
+              <button @click="triggerFileInput" class="change-avatar-button" title="Cambiar foto" :disabled="uploadingAvatar">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1V3H9V1L3 7V9H21ZM21 10H3V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V10Z" fill="currentColor"/>
                 </svg>
@@ -253,23 +259,41 @@ export default {
       const file = event.target.files[0]
       if (!file) return
 
+      // Validar tipo de archivo
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+      if (!allowedTypes.includes(file.type)) {
+        alert('Solo se permiten imágenes (JPEG, PNG, GIF)')
+        return
+      }
+
+      // Validar tamaño (5MB máximo)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen no puede superar los 5MB')
+        return
+      }
+
       this.uploadingAvatar = true
 
       try {
-        const formData = new FormData()
-        formData.append('avatar', file)
+        // Convertir archivo a base64
+        const base64 = await this.fileToBase64(file)
 
         const token = authService.getToken()
         const response = await fetch('http://localhost:3000/api/profile/avatar', {
           method: 'POST',
           headers: {
+            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: formData
+          body: JSON.stringify({
+            image: base64,
+            filename: file.name
+          })
         })
 
         if (!response.ok) {
-          throw new Error('Error al subir la imagen')
+          const error = await response.json()
+          throw new Error(error.error || 'Error al subir la imagen')
         }
 
         const result = await response.json()
@@ -282,6 +306,22 @@ export default {
         // Limpiar input
         this.$refs.fileInput.value = ''
       }
+    },
+
+    fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        
+        reader.onload = () => {
+          resolve(reader.result)
+        }
+        
+        reader.onerror = () => {
+          reject(new Error('Error al leer el archivo'))
+        }
+        
+        reader.readAsDataURL(file)
+      })
     },
 
     goBack() {
@@ -456,6 +496,34 @@ export default {
 .change-avatar-button:hover {
   transform: scale(1.1);
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.change-avatar-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #ffffff40;
+  border-top: 3px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 .user-info {

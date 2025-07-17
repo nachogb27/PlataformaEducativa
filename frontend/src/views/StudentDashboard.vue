@@ -24,16 +24,6 @@
     <div class="dashboard-content">
       <div class="content-header">
         <h2>Mis Profesores</h2>
-        <div class="stats">
-          <div class="stat-card">
-            <div class="stat-number">{{ teachers.length }}</div>
-            <div class="stat-label">Profesores</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number">{{ uniqueSubjects }}</div>
-            <div class="stat-label">Asignaturas</div>
-          </div>
-        </div>
       </div>
       
       <div v-if="loading" class="loading">
@@ -100,10 +90,6 @@ export default {
     await this.loadTeachers()
   },
   computed: {
-    uniqueSubjects() {
-      const subjects = new Set(this.teachers.map(t => t.subjectName))
-      return subjects.size
-    }
   },
   methods: {
     async loadTeachers() {
