@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt'); // 🆕 Importar bcrypt
 const nodemailer = require('nodemailer');
 const multer = require('multer');
 const path = require('path');
@@ -13,6 +13,9 @@ const app = express();
 const PORT = 3000;
 const JWT_SECRET = 'tu_clave_secreta_jwt';
 const TEACHER_TOKEN = '3rhb23uydb238ry6g2429hrh'; // Token global para profesores
+
+// 🆕 Configuración de bcrypt
+const SALT_ROUNDS = 12; // Número de rondas de salt (12 es un buen balance seguridad/performance)
 
 // Configurar multer para subida de imágenes
 const storage = multer.diskStorage({
@@ -67,7 +70,7 @@ function isValidEmail(email) {
   return emailRegex.test(email);
 }
 
-// LOGIN ENDPOINT
+// 🆕 LOGIN ENDPOINT CON BCRYPT
 app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -90,8 +93,10 @@ app.post('/api/login', async (req, res) => {
       return res.status(403).json({ error: 'La cuenta no está activada' });
     }
 
-    // Validar contraseña
-    if (user.password_token !== password) {
+    // 🔐 VALIDAR CONTRASEÑA CON BCRYPT
+    const isPasswordValid = bcrypt.compareSync(password, user.password_token);
+    
+    if (!isPasswordValid) {
       return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
 
@@ -104,6 +109,8 @@ app.post('/api/login', async (req, res) => {
       JWT_SECRET,
       { expiresIn: '24h' }
     );
+
+    console.log(`✅ Login exitoso para usuario: ${username}`);
 
     res.json({
       token,
@@ -122,7 +129,7 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// REGISTRO DE USUARIO
+// 🆕 REGISTRO DE USUARIO CON BCRYPT
 app.post('/api/register', async (req, res) => {
   try {
     const { name, surnames, username, email, password, confirmPassword, role, teacherToken } = req.body;
@@ -151,17 +158,21 @@ app.post('/api/register', async (req, res) => {
       }
     }
 
+    // 🔐 CIFRAR CONTRASEÑA CON BCRYPT
+    const hashedPassword = bcrypt.hashSync(password, SALT_ROUNDS);
+    console.log(`🔐 Contraseña cifrada para usuario: ${username}`);
+
     // Generar token de activación
     const activationToken = uuidv4();
 
-    // Crear usuario inactivo
+    // Crear usuario con contraseña cifrada
     const newUser = await User.create({
       name,
       surnames,
       username,
       email,
       role: roleId,
-      password_token: password,
+      password_token: hashedPassword, // 🔐 Guardar hash en lugar de texto plano
       access_token: activationToken,
       active: 0
     });
@@ -189,6 +200,8 @@ app.post('/api/register', async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
+    console.log(`✅ Usuario registrado: ${username} con contraseña cifrada`);
+
     res.json({ 
       message: 'Usuario registrado exitosamente. Revisa tu email para activar la cuenta.',
       userId: newUser.id 
@@ -199,7 +212,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// ACTIVACIÓN DE CUENTA
+// ACTIVACIÓN DE CUENTA (sin cambios)
 app.post('/api/activate-account', async (req, res) => {
   try {
     const { token } = req.body;
@@ -217,6 +230,8 @@ app.post('/api/activate-account', async (req, res) => {
     user.active = 1;
     await user.save();
 
+    console.log(`✅ Cuenta activada para usuario ID: ${user.id}`);
+
     res.json({ message: 'Cuenta activada exitosamente. Ya puedes iniciar sesión.' });
   } catch (error) {
     console.error('Error en activación:', error);
@@ -224,7 +239,7 @@ app.post('/api/activate-account', async (req, res) => {
   }
 });
 
-// SOLICITUD DE RECUPERACIÓN DE CONTRASEÑA
+// SOLICITUD DE RECUPERACIÓN DE CONTRASEÑA (sin cambios)
 app.post('/api/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
@@ -250,7 +265,7 @@ app.post('/api/forgot-password', async (req, res) => {
 
     // Generar token de reset
     const resetToken = uuidv4();
-    user.password_token = resetToken;
+    user.password_token = resetToken; // 🔄 Esto se cambiará en el siguiente endpoint
     await user.save();
 
     // Configurar email
@@ -276,6 +291,8 @@ app.post('/api/forgot-password', async (req, res) => {
     // Enviar email
     await transporter.sendMail(mailOptions);
 
+    console.log(`📧 Email de recuperación enviado a: ${email}`);
+
     res.json({ message: 'Email de recuperación enviado exitosamente' });
   } catch (error) {
     console.error('Error en forgot-password:', error);
@@ -283,7 +300,7 @@ app.post('/api/forgot-password', async (req, res) => {
   }
 });
 
-// RESTABLECER CONTRASEÑA
+// 🆕 RESTABLECER CONTRASEÑA CON BCRYPT
 app.post('/api/reset-password', async (req, res) => {
   try {
     const { token, newPassword, confirmPassword } = req.body;
@@ -310,9 +327,14 @@ app.post('/api/reset-password', async (req, res) => {
       return res.status(403).json({ error: 'Token inválido o expirado' });
     }
 
-    // Actualizar contraseña
-    user.password_token = newPassword; // En producción, usar hash
+    // 🔐 CIFRAR NUEVA CONTRASEÑA CON BCRYPT
+    const hashedPassword = bcrypt.hashSync(newPassword, SALT_ROUNDS);
+    
+    // Actualizar contraseña cifrada
+    user.password_token = hashedPassword;
     await user.save();
+
+    console.log(`🔐 Contraseña actualizada y cifrada para usuario ID: ${user.id}`);
 
     res.json({ message: 'Contraseña actualizada exitosamente' });
   } catch (error) {
@@ -321,7 +343,7 @@ app.post('/api/reset-password', async (req, res) => {
   }
 });
 
-// EDITAR ESTUDIANTE (solo nombre y apellidos)
+// EDITAR ESTUDIANTE (sin cambios)
 app.put('/api/teacher/student/:id', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -360,7 +382,7 @@ app.put('/api/teacher/student/:id', async (req, res) => {
   }
 });
 
-// ELIMINAR ESTUDIANTE (eliminar relación)
+// ELIMINAR ESTUDIANTE (sin cambios)
 app.delete('/api/teacher/student/:id', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -388,7 +410,7 @@ app.delete('/api/teacher/student/:id', async (req, res) => {
   }
 });
 
-// OBTENER PERFIL DE USUARIO
+// OBTENER PERFIL DE USUARIO (sin cambios)
 app.get('/api/profile', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -451,7 +473,7 @@ app.get('/api/profile', async (req, res) => {
   }
 });
 
-// ACTUALIZAR AVATAR (base64)
+// ACTUALIZAR AVATAR (sin cambios)
 app.post('/api/profile/avatar', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -518,7 +540,7 @@ app.post('/api/profile/avatar', async (req, res) => {
   }
 });
 
-// ACTUALIZAR PERFIL (sin avatar)
+// ACTUALIZAR PERFIL (sin cambios)
 app.put('/api/profile', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -542,6 +564,7 @@ app.put('/api/profile', async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+
 app.post('/api/logout', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -556,7 +579,7 @@ app.post('/api/logout', async (req, res) => {
   }
 });
 
-// OBTENER PROFESORES DEL ESTUDIANTE
+// OBTENER PROFESORES DEL ESTUDIANTE (sin cambios)
 app.get('/api/student/teachers', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -596,7 +619,7 @@ app.get('/api/student/teachers', async (req, res) => {
   }
 });
 
-// OBTENER ASIGNATURAS DEL ESTUDIANTE
+// OBTENER ASIGNATURAS DEL ESTUDIANTE (sin cambios)
 app.get('/api/student/subjects', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -634,7 +657,7 @@ app.get('/api/student/subjects', async (req, res) => {
   }
 });
 
-// OBTENER ESTUDIANTES DEL PROFESOR
+// OBTENER ESTUDIANTES DEL PROFESOR (sin cambios)
 app.get('/api/teacher/students', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -675,5 +698,6 @@ app.get('/api/teacher/students', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`🔐 Cifrado de contraseñas: ACTIVADO (bcrypt con ${SALT_ROUNDS} rounds)`);
 });

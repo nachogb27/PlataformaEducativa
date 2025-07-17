@@ -15,16 +15,16 @@ async function createTestData() {
     // Crear 10 estudiantes
     const students = [];
     const studentNames = [
-      { name: 'Juan', surname: 'Pérez García', email: 'juan.perez@usal.es' },
-      { name: 'María', surname: 'González López', email: 'maria.gonzalez@usal.es' },
-      { name: 'Carlos', surname: 'Ruiz Martín', email: 'carlos.ruiz@usal.es' },
-      { name: 'Ana', surname: 'Jiménez Ramos', email: 'ana.jimenez@usal.es' },
-      { name: 'Luis', surname: 'Hernández Vila', email: 'luis.hernandez@usal.es' },
-      { name: 'Elena', surname: 'Moreno Sanz', email: 'elena.moreno@usal.es' },
-      { name: 'David', surname: 'Torres Blanco', email: 'david.torres@usal.es' },
-      { name: 'Laura', surname: 'Romero Cruz', email: 'laura.romero@usal.es' },
-      { name: 'Pablo', surname: 'Vargas Díez', email: 'pablo.vargas@usal.es' },
-      { name: 'Carmen', surname: 'Delgado Vega', email: 'carmen.delgado@usal.es' }
+      { name: 'Juan', surname: 'Pérez García', email: 'juan.perez@email.es' },
+      { name: 'María', surname: 'González López', email: 'maria.gonzalez@email.es' },
+      { name: 'Carlos', surname: 'Ruiz Martín', email: 'carlos.ruiz@email.es' },
+      { name: 'Ana', surname: 'Jiménez Ramos', email: 'ana.jimenez@email.es' },
+      { name: 'Luis', surname: 'Hernández Vila', email: 'luis.hernandez@email.es' },
+      { name: 'Elena', surname: 'Moreno Sanz', email: 'elena.moreno@email.es' },
+      { name: 'David', surname: 'Torres Blanco', email: 'david.torres@email.es' },
+      { name: 'Laura', surname: 'Romero Cruz', email: 'laura.romero@email.es' },
+      { name: 'Pablo', surname: 'Vargas Díez', email: 'pablo.vargas@email.es' },
+      { name: 'Carmen', surname: 'Delgado Vega', email: 'carmen.delgado@email.es' }
     ];
 
     for (let i = 0; i < studentNames.length; i++) {
