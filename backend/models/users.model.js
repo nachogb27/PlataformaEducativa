@@ -58,7 +58,11 @@ const User = sequelize.define("users", {
      validate: {
        isIn: [[0, 1]]
      }
-   }
+   },
+    avatar: {
+      type: DataTypes.STRING,
+      allowNull: true
+  },
 }, {
    timestamps: true 
 });

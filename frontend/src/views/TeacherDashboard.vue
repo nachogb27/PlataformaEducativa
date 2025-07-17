@@ -7,6 +7,11 @@
           <p class="welcome-text">Gestiona tus estudiantes</p>
         </div>
         <div class="header-actions">
+          <button @click="goToProfile" class="profile-button" title="Mi Perfil">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
+            </svg>
+          </button>
           <button @click="logout" class="logout-button" title="Cerrar sesión">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 21H5C4.45 21 3.98 20.8 3.59 20.41C3.2 20.02 3 19.55 3 19V5C3 4.45 3.2 3.98 3.59 3.59C3.98 3.2 4.45 3 5 3H9V5H5V19H9V21ZM16 17L21 12L16 7V10H10V14H16V17Z" fill="currentColor"/>
@@ -55,7 +60,10 @@
             <tr v-for="student in students" :key="student.id">
               <td>
                 <div class="student-cell">
-                  <div class="student-avatar">{{ student.name.charAt(0) }}</div>
+                  <div v-if="student.avatar" class="student-avatar-image">
+                    <img :src="student.avatar" :alt="student.name" class="avatar-img" />
+                  </div>
+                  <div v-else class="student-avatar">{{ student.name.charAt(0) }}</div>
                   <span class="student-name">{{ student.name }}</span>
                 </div>
               </td>
@@ -197,6 +205,9 @@ export default {
         this.$router.push('/login')
       }
     },
+    goToProfile() {
+      this.$router.push('/profile')
+    },
     editStudent(student) {
       this.editingStudent = {
         id: student.id,
@@ -306,13 +317,13 @@ export default {
   gap: 12px;
 }
 
+.profile-button,
 .logout-button {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
   color: white;
   border: none;
   border-radius: 50%;
@@ -321,11 +332,25 @@ export default {
   position: relative;
 }
 
+.profile-button {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.profile-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.logout-button {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+}
+
 .logout-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
 }
 
+.profile-button:hover::after,
 .logout-button:hover::after {
   content: attr(title);
   position: absolute;
@@ -460,17 +485,36 @@ export default {
   gap: 12px;
 }
 
-.student-avatar {
+.student-avatar,
+.student-avatar-image {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
   font-size: 14px;
+  flex-shrink: 0;
+}
+
+.student-avatar {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.student-avatar-image {
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .student-name {

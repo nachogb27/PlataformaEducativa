@@ -5,6 +5,7 @@ import ForgotPasswordView from '../views/ForgotPasswordView.vue'
 import ResetPasswordView from '../views/ResetPasswordView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import ActivateAccountView from '../views/ActivateAccountView.vue'
+import ProfileView from '../views/ProfileView.vue'
 import StudentDashboard from '../views/StudentDashboard.vue'
 import TeacherDashboard from '../views/TeacherDashboard.vue'
 
@@ -39,6 +40,12 @@ const routes = [
     path: '/activate-account',
     name: 'ActivateAccount',
     component: ActivateAccountView
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: ProfileView,
+    meta: { requiresAuth: true }
   },
   {
     path: '/student-dashboard',

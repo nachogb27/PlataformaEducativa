@@ -3,13 +3,50 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const { User, Role, Subject, StudentsTeachersRelation, Session } = require('./index');
+const { User, Role, Subject, StudentsTeachersRelation, Session, sequelize } = require('./index');
 
 const app = express();
 const PORT = 3000;
 const JWT_SECRET = 'tu_clave_secreta_jwt';
 const TEACHER_TOKEN = '3rhb23uydb238ry6g2429hrh'; // Token global para profesores
+
+// Configurar multer para subida de imágenes
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = './uploads/avatars/';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB límite
+  fileFilter: function (req, file, cb) {
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif)'));
+    }
+  }
+});
+
+// Servir archivos estáticos
+app.use('/uploads', express.static('uploads'));
 
 // Configurar Nodemailer
 const transporter = nodemailer.createTransport({
@@ -351,7 +388,134 @@ app.delete('/api/teacher/student/:id', async (req, res) => {
   }
 });
 
-// LOGOUT ENDPOINT
+// OBTENER PERFIL DE USUARIO
+app.get('/api/profile', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    const user = await User.findByPk(decoded.userId, {
+      include: [{
+        model: Role,
+        as: 'roleData'
+      }]
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    const profileData = {
+      id: user.id,
+      name: user.name,
+      surnames: user.surnames,
+      email: user.email,
+      username: user.username,
+      role: user.roleData.role_name,
+      avatar: user.avatar ? `http://localhost:${PORT}/uploads/avatars/${user.avatar}` : null
+    };
+
+    // Si es profesor, agregar estadísticas de asignaturas
+    if (user.roleData.role_name === 'teacher') {
+      const relations = await StudentsTeachersRelation.findAll({
+        where: { id_teacher: user.id },
+        include: [{
+          model: Subject,
+          as: 'subject'
+        }]
+      });
+
+      // Agrupar por asignatura y contar estudiantes
+      const subjectCounts = {};
+      relations.forEach(relation => {
+        const subjectName = relation.subject.subject_name;
+        if (subjectCounts[subjectName]) {
+          subjectCounts[subjectName]++;
+        } else {
+          subjectCounts[subjectName] = 1;
+        }
+      });
+
+      profileData.subjectStats = Object.entries(subjectCounts).map(([subjectName, studentCount]) => ({
+        subjectName,
+        studentCount
+      }));
+    }
+
+    res.json(profileData);
+  } catch (error) {
+    console.error('Error obteniendo perfil:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// ACTUALIZAR AVATAR
+app.post('/api/profile/avatar', upload.single('avatar'), async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se ha subido ningún archivo' });
+    }
+
+    const user = await User.findByPk(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // Eliminar avatar anterior si existe
+    if (user.avatar) {
+      const oldAvatarPath = path.join('./uploads/avatars/', user.avatar);
+      if (fs.existsSync(oldAvatarPath)) {
+        fs.unlinkSync(oldAvatarPath);
+      }
+    }
+
+    // Actualizar usuario con nuevo avatar
+    user.avatar = req.file.filename;
+    await user.save();
+
+    const avatarUrl = `http://localhost:${PORT}/uploads/avatars/${req.file.filename}`;
+    
+    res.json({ 
+      message: 'Avatar actualizado exitosamente',
+      avatarUrl: avatarUrl
+    });
+  } catch (error) {
+    console.error('Error actualizando avatar:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// ACTUALIZAR PERFIL (sin avatar)
+app.put('/api/profile', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { name, surnames } = req.body;
+
+    const user = await User.findByPk(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    user.name = name;
+    user.surnames = surnames;
+    await user.save();
+
+    res.json({ message: 'Perfil actualizado exitosamente' });
+  } catch (error) {
+    console.error('Error actualizando perfil:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
 app.post('/api/logout', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -384,7 +548,7 @@ app.get('/api/student/teachers', async (req, res) => {
         {
           model: User,
           as: 'teacher',
-          attributes: ['id', 'name', 'surnames', 'email']
+          attributes: ['id', 'name', 'surnames', 'email', 'avatar']
         }
       ]
     });
@@ -395,6 +559,7 @@ app.get('/api/student/teachers', async (req, res) => {
       name: relation.teacher.name,
       surnames: relation.teacher.surnames,
       email: relation.teacher.email,
+      avatar: relation.teacher.avatar ? `http://localhost:${PORT}/uploads/avatars/${relation.teacher.avatar}` : null,
       subjectName: relation.subject.subject_name
     }));
 
@@ -457,7 +622,7 @@ app.get('/api/teacher/students', async (req, res) => {
         {
           model: User,
           as: 'student',
-          attributes: ['id', 'name', 'surnames', 'email']
+          attributes: ['id', 'name', 'surnames', 'email', 'avatar']
         },
         {
           model: Subject,
@@ -471,6 +636,7 @@ app.get('/api/teacher/students', async (req, res) => {
       name: relation.student.name,
       lastName: relation.student.surnames,
       email: relation.student.email,
+      avatar: relation.student.avatar ? `http://localhost:${PORT}/uploads/avatars/${relation.student.avatar}` : null,
       subject: relation.subject.subject_name,
       grade: (Math.random() * 3 + 7).toFixed(1) // Temporal
     }));
