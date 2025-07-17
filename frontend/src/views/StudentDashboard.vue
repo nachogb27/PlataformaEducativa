@@ -4,67 +4,68 @@
       <div class="header-content">
         <div class="welcome-section">
           <h1>Panel de Estudiante</h1>
-          <p class="welcome-text">Bienvenido de vuelta</p>
+          <p class="welcome-text">Home</p>
         </div>
-        <button @click="logout" class="logout-button">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M9 21H5C4.45 21 3.98 20.8 3.59 20.41C3.2 20.02 3 19.55 3 19V5C3 4.45 3.2 3.98 3.59 3.59C3.98 3.2 4.45 3 5 3H9V5H5V19H9V21ZM16 17L21 12L16 7V10H10V14H16V17Z" fill="currentColor"/>
-          </svg>
-          Cerrar Sesión
-        </button>
+        <div class="header-actions">
+          <button @click="logout" class="logout-button" title="Cerrar sesión">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 21H5C4.45 21 3.98 20.8 3.59 20.41C3.2 20.02 3 19.55 3 19V5C3 4.45 3.2 3.98 3.59 3.59C3.98 3.2 4.45 3 5 3H9V5H5V19H9V21ZM16 17L21 12L16 7V10H10V14H16V17Z" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
     
     <div class="dashboard-content">
       <div class="content-header">
-        <h2>Mis Asignaturas</h2>
+        <h2>Mis Profesores</h2>
         <div class="stats">
           <div class="stat-card">
-            <div class="stat-number">{{ subjects.length }}</div>
-            <div class="stat-label">Asignaturas</div>
+            <div class="stat-number">{{ teachers.length }}</div>
+            <div class="stat-label">Profesores</div>
           </div>
           <div class="stat-card">
-            <div class="stat-number">{{ activeSubjects }}</div>
-            <div class="stat-label">Activas</div>
+            <div class="stat-number">{{ uniqueSubjects }}</div>
+            <div class="stat-label">Asignaturas</div>
           </div>
         </div>
       </div>
       
-      <div class="table-container">
-        <table class="subjects-table">
+      <div v-if="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Cargando profesores...</p>
+      </div>
+      
+      <div v-else-if="error" class="error-message">
+        {{ error }}
+      </div>
+      
+      <div v-else class="table-container">
+        <table class="teachers-table">
           <thead>
             <tr>
-              <th>Nombre</th>
-              <th>Profesor</th>
-              <th>Créditos</th>
-              <th>Estado</th>
-              <th>Acciones</th>
+              <th>Nombre del profesor</th>
+              <th>Apellidos del profesor</th>
+              <th>Email del profesor</th>
+              <th>Nombre de la asignatura</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="subject in subjects" :key="subject.id">
-              <td>
-                <div class="subject-cell">
-                  <div class="subject-icon">📚</div>
-                  <span class="subject-name">{{ subject.name }}</span>
-                </div>
-              </td>
+            <tr v-for="teacher in teachers" :key="`${teacher.teacherId}-${teacher.subjectId}`">
               <td>
                 <div class="teacher-cell">
-                  <div class="teacher-avatar">{{ subject.teacher.charAt(0) }}</div>
-                  <span>{{ subject.teacher }}</span>
+                  <div class="teacher-avatar">{{ teacher.name.charAt(0) }}</div>
+                  <span class="teacher-name">{{ teacher.name }}</span>
                 </div>
               </td>
               <td>
-                <span class="credits-badge">{{ subject.credits }} créditos</span>
+                <span class="teacher-surname">{{ teacher.surnames }}</span>
               </td>
               <td>
-                <span class="status-badge cursando">
-                  {{ subject.status }}
-                </span>
+                <span class="teacher-email">{{ teacher.email }}</span>
               </td>
               <td>
-                <button class="action-button">Ver Detalles</button>
+                <span class="subject-badge">{{ teacher.subjectName }}</span>
               </td>
             </tr>
           </tbody>
@@ -82,21 +83,27 @@ export default {
   name: 'StudentDashboard',
   data() {
     return {
-      subjects: [],
+      teachers: [],
       loading: true,
       error: null
     }
   },
   async mounted() {
-    await this.loadSubjects()
+    await this.loadTeachers()
+  },
+  computed: {
+    uniqueSubjects() {
+      const subjects = new Set(this.teachers.map(t => t.subjectName))
+      return subjects.size
+    }
   },
   methods: {
-    async loadSubjects() {
+    async loadTeachers() {
       try {
-        this.subjects = await dataService.getStudentSubjects()
+        this.teachers = await dataService.getStudentTeachers()
       } catch (error) {
         this.error = error.message
-        console.error('Error cargando asignaturas:', error)
+        console.error('Error cargando profesores:', error)
       } finally {
         this.loading = false
       }
@@ -109,11 +116,6 @@ export default {
         console.error('Error en logout:', error)
         this.$router.push('/login')
       }
-    }
-  },
-  computed: {
-    activeSubjects() {
-      return this.subjects.filter(s => s.status === 'Cursando').length
     }
   }
 }
@@ -160,24 +162,43 @@ export default {
   margin: 0;
 }
 
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
 .logout-button {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
   background: linear-gradient(135deg, #ff6b6b, #ee5a52);
   color: white;
   border: none;
-  padding: 12px 20px;
-  border-radius: 12px;
+  border-radius: 50%;
   cursor: pointer;
-  font-weight: 600;
   transition: all 0.3s ease;
-  font-size: 14px;
+  position: relative;
 }
 
 .logout-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+}
+
+.logout-button:hover::after {
+  content: attr(title);
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
 }
 
 .dashboard-content {
@@ -229,6 +250,37 @@ export default {
   font-weight: 500;
 }
 
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #718096;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  color: #e53e3e;
+  background: rgba(254, 178, 178, 0.2);
+  border: 1px solid rgba(254, 178, 178, 0.5);
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  margin: 40px 0;
+}
+
 .table-container {
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
@@ -238,12 +290,12 @@ export default {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.subjects-table {
+.teachers-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.subjects-table th {
+.teachers-table th {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   padding: 20px;
@@ -254,28 +306,13 @@ export default {
   letter-spacing: 0.5px;
 }
 
-.subjects-table td {
+.teachers-table td {
   padding: 20px;
   border-bottom: 1px solid rgba(226, 232, 240, 0.5);
 }
 
-.subjects-table tr:hover {
+.teachers-table tr:hover {
   background: rgba(102, 126, 234, 0.05);
-}
-
-.subject-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.subject-icon {
-  font-size: 20px;
-}
-
-.subject-name {
-  font-weight: 600;
-  color: #2d3748;
 }
 
 .teacher-cell {
@@ -297,41 +334,27 @@ export default {
   font-size: 14px;
 }
 
-.credits-badge {
+.teacher-name {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.teacher-surname {
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.teacher-email {
+  color: #718096;
+  font-size: 14px;
+}
+
+.subject-badge {
   background: rgba(102, 126, 234, 0.1);
   color: #667eea;
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
-}
-
-.status-badge {
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.status-badge.cursando {
-  background: rgba(72, 187, 120, 0.1);
-  color: #48bb78;
-}
-
-.action-button {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.action-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 </style>

@@ -53,32 +53,30 @@ const routes = [
     meta: { requiresAuth: true, role: 'teacher' }
   },
   {
-    path: '/student-dashboard',
-    name: 'StudentDashboard',
-    component: StudentDashboard,
-    meta: { requiresAuth: true, role: 'student' }
-  },
-  {
-    path: '/teacher-dashboard',
-    name: 'TeacherDashboard',
-    component: TeacherDashboard,
-    meta: { requiresAuth: true, role: 'teacher' }
+    path: '*',
+    redirect: '/login'
   }
 ]
 
 const router = new VueRouter({
-  mode: 'history',
+  mode: 'hash',
   routes
 })
 
 // Guard para proteger rutas
 router.beforeEach((to, from, next) => {
-  if (to.meta.requiresAuth) {
-    // Por ahora dejamos pasar todas las rutas
-    next()
-  } else {
-    next()
-  }
+  // Importar authService dinámicamente para evitar problemas de importación circular
+  import('../services/authService').then(({ default: authService }) => {
+    if (to.meta.requiresAuth) {
+      if (!authService.isAuthenticated()) {
+        next('/login')
+      } else {
+        next()
+      }
+    } else {
+      next()
+    }
+  })
 })
 
 export default router

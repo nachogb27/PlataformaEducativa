@@ -17,7 +17,7 @@ class AuthService {
 
     const data = await response.json();
     
-    // Guardar token en memoria
+    // Guardar token y usuario
     this.setToken(data.token);
     this.setUser(data.user);
     
@@ -38,24 +38,25 @@ class AuthService {
   }
 
   setToken(token) {
-    window.authToken = token;
+    sessionStorage.setItem('authToken', token);
   }
 
   getToken() {
-    return window.authToken;
+    return sessionStorage.getItem('authToken');
   }
 
   setUser(user) {
-    window.currentUser = user;
+    sessionStorage.setItem('currentUser', JSON.stringify(user));
   }
 
   getUser() {
-    return window.currentUser;
+    const user = sessionStorage.getItem('currentUser');
+    return user ? JSON.parse(user) : null;
   }
 
   clearAuth() {
-    window.authToken = null;
-    window.currentUser = null;
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('currentUser');
   }
 
   isAuthenticated() {

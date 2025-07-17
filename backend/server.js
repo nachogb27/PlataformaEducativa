@@ -133,7 +133,7 @@ app.post('/api/register', async (req, res) => {
     const activationUrl = `http://localhost:8080/activate-account?token=${activationToken}`;
     
     const mailOptions = {
-      from: 'tu_email_del_proyecto@gmail.com',
+      from: 'plataforma.educativa.proyecto@gmail.com',
       to: email,
       subject: 'Activar cuenta - Plataforma Educativa',
       html: `
@@ -186,6 +186,8 @@ app.post('/api/activate-account', async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+
+// SOLICITUD DE RECUPERACIÓN DE CONTRASEÑA
 app.post('/api/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
@@ -218,7 +220,7 @@ app.post('/api/forgot-password', async (req, res) => {
     const resetUrl = `http://localhost:8080/reset-password?token=${resetToken}`;
     
     const mailOptions = {
-      from: 'tu_email@gmail.com',
+      from: 'plataforma.educativa.proyecto@gmail.com',
       to: email,
       subject: 'Recuperación de contraseña - Plataforma Educativa',
       html: `
@@ -282,6 +284,73 @@ app.post('/api/reset-password', async (req, res) => {
   }
 });
 
+// EDITAR ESTUDIANTE (solo nombre y apellidos)
+app.put('/api/teacher/student/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const studentId = req.params.id;
+    const { name, surnames } = req.body;
+
+    // Verificar que el profesor puede editar este estudiante
+    const relation = await StudentsTeachersRelation.findOne({
+      where: { 
+        id_teacher: decoded.userId,
+        id_student: studentId 
+      }
+    });
+
+    if (!relation) {
+      return res.status(403).json({ error: 'No tienes permisos para editar este estudiante' });
+    }
+
+    // Actualizar estudiante
+    const student = await User.findByPk(studentId);
+    if (!student) {
+      return res.status(404).json({ error: 'Estudiante no encontrado' });
+    }
+
+    student.name = name;
+    student.surnames = surnames;
+    await student.save();
+
+    res.json({ message: 'Estudiante actualizado exitosamente', student });
+  } catch (error) {
+    console.error('Error editando estudiante:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// ELIMINAR ESTUDIANTE (eliminar relación)
+app.delete('/api/teacher/student/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const studentId = req.params.id;
+
+    // Eliminar la relación estudiante-profesor
+    const deletedRows = await StudentsTeachersRelation.destroy({
+      where: { 
+        id_teacher: decoded.userId,
+        id_student: studentId 
+      }
+    });
+
+    if (deletedRows === 0) {
+      return res.status(404).json({ error: 'Relación no encontrada' });
+    }
+
+    res.json({ message: 'Estudiante eliminado de tu lista exitosamente' });
+  } catch (error) {
+    console.error('Error eliminando estudiante:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 // LOGOUT ENDPOINT
 app.post('/api/logout', async (req, res) => {
   try {
@@ -294,6 +363,45 @@ app.post('/api/logout', async (req, res) => {
     res.json({ message: 'Sesión cerrada exitosamente' });
   } catch (error) {
     res.status(500).json({ error: 'Error al cerrar sesión' });
+  }
+});
+
+// OBTENER PROFESORES DEL ESTUDIANTE
+app.get('/api/student/teachers', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    const relations = await StudentsTeachersRelation.findAll({
+      where: { id_student: decoded.userId },
+      include: [
+        {
+          model: Subject,
+          as: 'subject'
+        },
+        {
+          model: User,
+          as: 'teacher',
+          attributes: ['id', 'name', 'surnames', 'email']
+        }
+      ]
+    });
+
+    const teachers = relations.map(relation => ({
+      teacherId: relation.teacher.id,
+      subjectId: relation.subject.id,
+      name: relation.teacher.name,
+      surnames: relation.teacher.surnames,
+      email: relation.teacher.email,
+      subjectName: relation.subject.subject_name
+    }));
+
+    res.json(teachers);
+  } catch (error) {
+    console.error('Error obteniendo profesores:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
@@ -349,7 +457,7 @@ app.get('/api/teacher/students', async (req, res) => {
         {
           model: User,
           as: 'student',
-          attributes: ['name', 'surnames', 'email']
+          attributes: ['id', 'name', 'surnames', 'email']
         },
         {
           model: Subject,
