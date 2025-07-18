@@ -43,11 +43,11 @@ async function createTestData() {
     // Crear 5 profesores
     const teachers = [];
     const teacherData = [
-      { name: 'Roberto', surname: 'García Fernández', email: 'roberto.garcia@usal.es', subject: 1 }, // Inglés
-      { name: 'Isabel', surname: 'López Martínez', email: 'isabel.lopez@usal.es', subject: 2 }, // Lengua Castellana
-      { name: 'Miguel', surname: 'Rodríguez Santos', email: 'miguel.rodriguez@usal.es', subject: 9 }, // Matemáticas
-      { name: 'Patricia', surname: 'Sánchez Ruiz', email: 'patricia.sanchez@usal.es', subject: 7 }, // Historia
-      { name: 'Fernando', surname: 'Martín Iglesias', email: 'fernando.martin@usal.es', subject: 3 } // Física
+      { name: 'Roberto', surname: 'García Fernández', email: 'roberto.garcia@email.es', subject: 1 }, // Inglés
+      { name: 'Isabel', surname: 'López Martínez', email: 'isabel.lopez@email.es', subject: 2 }, // Lengua Castellana
+      { name: 'Miguel', surname: 'Rodríguez Santos', email: 'miguel.rodriguez@email.es', subject: 9 }, // Matemáticas
+      { name: 'Patricia', surname: 'Sánchez Ruiz', email: 'patricia.sanchez@email.es', subject: 7 }, // Historia
+      { name: 'Fernando', surname: 'Martín Iglesias', email: 'fernando.martin@email.es', subject: 3 } // Física
     ];
 
     for (let i = 0; i < teacherData.length; i++) {
