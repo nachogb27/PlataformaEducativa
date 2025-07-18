@@ -178,7 +178,8 @@ app.post('/api/register', async (req, res) => {
     });
 
     // Enviar email de activación
-    const activationUrl = `http://localhost:8080/activate-account?token=${activationToken}`;
+    const activationUrl = `http://localhost:3000/api/activate-account?token=${activationToken}`;
+
     
     const mailOptions = {
       from: 'plataforma.educativa.proyecto@gmail.com',
@@ -213,6 +214,33 @@ app.post('/api/register', async (req, res) => {
 });
 
 // ACTIVACIÓN DE CUENTA (sin cambios)
+app.get('/api/activate-account', async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    const user = await User.findOne({
+      where: { access_token: token, active: 0 }
+    });
+
+    if (!user) {
+      return res.status(403).send('Token inválido o cuenta ya activada.');
+    }
+
+    user.active = 1;
+    await user.save();
+
+    console.log(`✅ Cuenta activada para usuario ID: ${user.id}`);
+
+     // 🔁 Redirige al login del frontend
+    res.redirect('http://localhost:8080/login?activated=true');
+  } catch (error) {
+    console.error('Error en activación vía GET:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+
+/*
 app.post('/api/activate-account', async (req, res) => {
   try {
     const { token } = req.body;
@@ -238,6 +266,7 @@ app.post('/api/activate-account', async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+*/
 
 // SOLICITUD DE RECUPERACIÓN DE CONTRASEÑA (sin cambios)
 app.post('/api/forgot-password', async (req, res) => {
