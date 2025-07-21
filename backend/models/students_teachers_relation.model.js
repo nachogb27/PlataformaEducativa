@@ -25,15 +25,26 @@ const StudentsTeachersRelation = sequelize.define("students_teachers_relation", 
       key: 'id',       
     },
     validate: {
+      // 🔧 VALIDACIÓN CORREGIDA PARA PERMITIR RELACIONES DUMMY DE PROFESORES
       async isValidStudent(value) {
         const User = require('./users.model');
         const user = await User.findByPk(value);
         if (!user) {
           throw new Error('El usuario estudiante no existe');
         }
-        if (user.role !== 1) {
-          throw new Error('El usuario debe tener rol de estudiante (role = 1)');
+        
+        // ✅ PERMITIR ESTUDIANTES NORMALES (role = 1)
+        if (user.role === 1) {
+          return; // Válido
         }
+        
+        // ✅ PERMITIR PROFESORES EN RELACIONES DUMMY (role = 2 Y id_student = id_teacher)
+        if (user.role === 2 && value === this.id_teacher) {
+          return; // Válido - es una relación dummy donde el profesor se asigna a sí mismo
+        }
+        
+        // ❌ RECHAZAR CUALQUIER OTRO CASO
+        throw new Error('El usuario debe tener rol de estudiante (role = 1) o ser una relación dummy de profesor');
       }
     }
    },
@@ -75,11 +86,15 @@ const StudentsTeachersRelation = sequelize.define("students_teachers_relation", 
    ]
 });
 
-// Métodos estáticos MEJORADOS con validaciones
+// 🔧 MÉTODOS ESTÁTICOS MEJORADOS PARA EXCLUIR RELACIONES DUMMY
 StudentsTeachersRelation.getStudentsByTeacher = async function(teacherId) {
    return await this.findAll({
       where: {
-         id_teacher: teacherId
+         id_teacher: teacherId,
+         // 🔧 EXCLUIR RELACIONES DUMMY (donde id_student = id_teacher)
+         id_student: {
+           [Sequelize.Op.ne]: teacherId
+         }
       }
    });
 };
@@ -89,6 +104,43 @@ StudentsTeachersRelation.getTeachersByStudent = async function(studentId) {
       where: {
          id_student: studentId
       }
+   });
+};
+
+// 🆕 MÉTODO PARA OBTENER ASIGNATURAS QUE DA UN PROFESOR (INCLUYENDO RELACIONES DUMMY)
+StudentsTeachersRelation.getSubjectsByTeacher = async function(teacherId) {
+   return await this.findAll({
+      where: {
+         id_teacher: teacherId
+      }
+   });
+};
+
+// 🆕 MÉTODO PARA CREAR RELACIÓN DUMMY DE PROFESOR
+StudentsTeachersRelation.createTeacherSubjectRelation = async function(teacherId, subjectId) {
+   const User = require('./users.model');
+   const Subject = require('./subjects.model');
+   
+   // Verificar que el profesor existe y tiene rol correcto
+   const teacher = await User.findByPk(teacherId);
+   if (!teacher) {
+     throw new Error('El profesor no existe');
+   }
+   if (teacher.role !== 2) {
+     throw new Error('El usuario debe ser un profesor (role = 2)');
+   }
+   
+   // Verificar que la asignatura existe
+   const subject = await Subject.findByPk(subjectId);
+   if (!subject) {
+     throw new Error('La asignatura no existe');
+   }
+   
+   // Crear relación dummy (id_student = id_teacher)
+   return await this.create({
+      id_student: teacherId,  // 🔧 Mismo ID para crear relación dummy
+      id_teacher: teacherId,
+      id_subject: subjectId
    });
 };
 

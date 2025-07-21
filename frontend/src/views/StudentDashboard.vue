@@ -7,6 +7,11 @@
           <p class="welcome-text">Profesores de mis asignaturas</p>
         </div>
         <div class="header-actions">
+          <button @click="goToSubjects" class="subjects-button" title="Mis Asignaturas">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L3 7L12 12L21 7L12 2ZM3 17L12 22L21 17M3 12L12 17L21 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
           <button @click="goToProfile" class="profile-button" title="Mi Perfil">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
@@ -26,15 +31,35 @@
         <h2>Mis Profesores</h2>
       </div>
       
+      <!-- Debug info -->
+      <div v-if="debugMode" class="debug-info">
+        <h4>🔍 Debug Info:</h4>
+        <p>Token: {{ debugInfo.hasToken ? 'Presente' : 'Ausente' }}</p>
+        <p>Usuario: {{ debugInfo.username || 'No disponible' }}</p>
+        <p>Rol: {{ debugInfo.role || 'No disponible' }}</p>
+        <p>Estado: {{ debugInfo.loadingState }}</p>
+        <button @click="debugMode = false" class="debug-close">×</button>
+      </div>
+      
       <div v-if="loading" class="loading">
         <div class="spinner"></div>
-        <p>Cargando profesores...</p>
+        <p>{{ loadingMessage }}</p>
+        <button @click="debugMode = true" class="debug-button">🔍 Debug</button>
       </div>
       
       <div v-else-if="error" class="error-message">
-        {{ error }}
+        <h3>❌ Error cargando datos</h3>
+        <p>{{ error }}</p>
+        <div class="error-actions">
+          <button @click="retryLoad" class="retry-button">🔄 Reintentar</button>
+          <button @click="debugMode = true" class="debug-button">🔍 Debug</button>
+          <button @click="goToLogin" class="login-button">🔑 Ir a Login</button>
+        </div>
       </div>
-      
+      <div v-if="teachers.length === 0 && !loading" class="empty-state">
+        <p>¡Parece que no tienes profesores asignados a tus asignaturas!</p>
+        <p>Contacta con tu administrador o profesor para más información.</p>  
+      </div>
       <div v-else class="table-container">
         <table class="teachers-table">
           <thead>
@@ -83,27 +108,111 @@ export default {
     return {
       teachers: [],
       loading: true,
-      error: null
+      error: null,
+      loadingMessage: 'Cargando profesores...',
+      // Debug
+      debugMode: false,
+      debugInfo: {
+        hasToken: false,
+        username: '',
+        role: '',
+        loadingState: 'initial'
+      }
     }
   },
   async mounted() {
-    await this.loadTeachers()
-  },
-  computed: {
+    console.log('🔄 StudentDashboard mounted')
+    await this.initializeDashboard()
   },
   methods: {
+    async initializeDashboard() {
+      console.log('🔄 Inicializando dashboard del estudiante...')
+      
+      try {
+        // Verificar autenticación
+        if (!authService.isAuthenticated()) {
+          console.log('❌ Usuario no autenticado, redirigiendo a login')
+          this.$router.push('/login')
+          return
+        }
+        
+        // Obtener información del usuario
+        const user = authService.getUser()
+        console.log('👤 Usuario actual:', user)
+        
+        this.debugInfo = {
+          hasToken: !!authService.getToken(),
+          username: user?.username || 'N/A',
+          role: user?.role || 'N/A',
+          loadingState: 'authenticated'
+        }
+        
+        // Verificar que es estudiante
+        if (user?.role !== 'student') {
+          console.log('❌ Usuario no es estudiante:', user?.role)
+          this.error = 'Acceso denegado: Solo los estudiantes pueden acceder a esta página'
+          this.loading = false
+          return
+        }
+        
+        // Cargar profesores
+        await this.loadTeachers()
+        
+      } catch (error) {
+        console.error('❌ Error inicializando dashboard:', error)
+        this.error = `Error de inicialización: ${error.message}`
+        this.loading = false
+      }
+    },
+    
     async loadTeachers() {
       try {
+        this.loadingMessage = 'Conectando con el servidor...'
+        this.debugInfo.loadingState = 'loading'
+        
+        console.log('🔄 Cargando profesores del estudiante...')
+        
+        // Verificar token antes de hacer la petición
+        const token = authService.getToken()
+        if (!token) {
+          throw new Error('Token de autenticación no disponible')
+        }
+        
+        console.log('🔑 Token encontrado, haciendo petición...')
+        this.loadingMessage = 'Obteniendo lista de profesores...'
+        
         this.teachers = await dataService.getStudentTeachers()
+        console.log('✅ Profesores cargados:', this.teachers.length)
+        
+        this.debugInfo.loadingState = 'success'
+        
       } catch (error) {
-        this.error = error.message
-        console.error('Error cargando profesores:', error)
+        console.error('❌ Error cargando profesores:', error)
+        this.error = error.message || 'Error desconocido al cargar profesores'
+        this.debugInfo.loadingState = 'error'
+        
+        // Si es un error de autenticación, redirigir al login
+        if (error.message.includes('Token') || error.message.includes('401') || error.message.includes('jwt')) {
+          console.log('🔄 Error de autenticación, limpiando sesión...')
+          authService.logout()
+          setTimeout(() => {
+            this.$router.push('/login')
+          }, 2000)
+        }
       } finally {
         this.loading = false
       }
     },
+    
+    async retryLoad() {
+      this.loading = true
+      this.error = null
+      await this.loadTeachers()
+    },
+    
     async logout() {
       try {
+        console.log('🔄 Cerrando sesión...')
         await authService.logout()
         this.$router.push('/login')
       } catch (error) {
@@ -111,8 +220,18 @@ export default {
         this.$router.push('/login')
       }
     },
+    
     goToProfile() {
       this.$router.push('/profile')
+    },
+    
+    goToSubjects() {
+      this.$router.push('/subjects')
+    },
+    
+    goToLogin() {
+      authService.logout()
+      this.$router.push('/login')
     }
   }
 }
@@ -165,6 +284,7 @@ export default {
 }
 
 .profile-button,
+.subjects-button,
 .logout-button {
   display: flex;
   align-items: center;
@@ -177,6 +297,15 @@ export default {
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
+}
+
+.subjects-button {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+}
+
+.subjects-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
 }
 
 .profile-button {
@@ -198,6 +327,7 @@ export default {
 }
 
 .profile-button:hover::after,
+.subjects-button:hover::after,
 .logout-button:hover::after {
   content: attr(title);
   position: absolute;
@@ -232,33 +362,30 @@ export default {
   margin: 0;
 }
 
-.stats {
-  display: flex;
-  gap: 16px;
-}
-
-.stat-card {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  padding: 20px;
-  border-radius: 16px;
-  text-align: center;
-  min-width: 100px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.stat-number {
-  font-size: 32px;
-  font-weight: 700;
-  color: #667eea;
-  margin-bottom: 4px;
-}
-
-.stat-label {
-  color: #718096;
+.debug-info {
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  position: relative;
   font-size: 14px;
-  font-weight: 500;
+}
+
+.debug-info h4 {
+  margin: 0 0 8px 0;
+  color: #856404;
+}
+
+.debug-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #856404;
 }
 
 .loading {
@@ -286,10 +413,79 @@ export default {
   color: #e53e3e;
   background: rgba(254, 178, 178, 0.2);
   border: 1px solid rgba(254, 178, 178, 0.5);
-  padding: 20px;
+  padding: 24px;
   border-radius: 12px;
   text-align: center;
   margin: 40px 0;
+}
+
+.error-message h3 {
+  margin: 0 0 12px 0;
+}
+
+.error-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.retry-button,
+.debug-button,
+.login-button,
+.enroll-subjects-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.retry-button {
+  background: linear-gradient(135deg, #4299e1, #3182ce);
+  color: white;
+}
+
+.debug-button {
+  background: linear-gradient(135deg, #ed8936, #dd6b20);
+  color: white;
+}
+
+.login-button {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.enroll-subjects-button {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  color: white;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: #718096;
+}
+
+.empty-state svg {
+  margin-bottom: 24px;
+}
+
+.empty-state h3 {
+  color: #4a5568;
+  margin: 0 0 12px 0;
+  font-size: 24px;
+}
+
+.empty-state p {
+  margin: 0 0 32px 0;
+  font-size: 16px;
 }
 
 .table-container {
@@ -386,5 +582,11 @@ export default {
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .error-actions {
+    flex-direction: column;
+  }
 }
 </style>

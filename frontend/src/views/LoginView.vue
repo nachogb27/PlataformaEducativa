@@ -1,50 +1,55 @@
 <template>
   <div class="login-container">
     <div class="login-card">
-      <h2>Iniciar Sesión</h2>
+      <h1>Iniciar Sesión</h1>
       
-      <form @submit.prevent="login" class="login-form">
+      <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
-          <label for="username">Nombre de usuario:</label>
+          <label for="username">NOMBRE DE USUARIO:</label>
           <input 
             type="text" 
             id="username" 
-            v-model="credentials.username"
+            v-model="form.username"
             placeholder="Ingresa tu nombre de usuario"
             required
+            :disabled="loading"
           />
         </div>
         
         <div class="form-group">
-          <label for="password">Contraseña:</label>
+          <label for="password">CONTRASEÑA:</label>
           <input 
             type="password" 
             id="password" 
-            v-model="credentials.password"
+            v-model="form.password"
             placeholder="Ingresa tu contraseña"
             required
+            :disabled="loading"
           />
+        </div>
+        
+        <div v-if="error" class="error-message">
+          {{ error }}
         </div>
         
         <div v-if="successMessage" class="success-message">
           {{ successMessage }}
         </div>
         
-        <div v-if="errorMessage" class="error-message">
-          {{ errorMessage }}
-        </div>
-        
-        <button type="submit" class="login-button" :disabled="loading">
-          {{ loading ? 'Iniciando...' : 'Iniciar Sesión' }}
+        <button 
+          type="submit" 
+          class="login-button"
+          :disabled="loading"
+        >
+          {{ loading ? 'INICIANDO SESIÓN...' : 'INICIAR SESIÓN' }}
         </button>
       </form>
       
-      <div class="links">
-        <router-link to="/forgot-password" class="forgot-password">
+      <div class="login-links">
+        <router-link to="/forgot-password" class="link">
           Did you forget your password?
         </router-link>
-        
-        <router-link to="/register" class="register-link">
+        <router-link to="/register" class="link">
           Sign up
         </router-link>
       </div>
@@ -59,39 +64,88 @@ export default {
   name: 'LoginView',
   data() {
     return {
-      credentials: {
+      form: {
         username: '',
         password: ''
       },
-      errorMessage: '',
-      successMessage: '',
-      loading: false
+      loading: false,
+      error: '',
+      successMessage: ''
     }
   },
   mounted() {
-    // Mostrar mensaje de éxito si viene de reset password
-    if (this.$route.query.message) {
-      this.successMessage = this.$route.query.message;
+    // Verificar si hay un mensaje de activación exitosa
+    if (this.$route.query.activated === 'true') {
+      this.successMessage = 'Cuenta activada exitosamente. Ya puedes iniciar sesión.'
+    }
+    
+    // Si ya está autenticado, redirigir
+    if (authService.isAuthenticated()) {
+      this.redirectToDashboard()
     }
   },
   methods: {
-    async login() {
+    async handleLogin() {
+      // Limpiar mensajes anteriores
+      this.error = ''
+      this.successMessage = ''
+      
+      // Validaciones básicas
+      if (!this.form.username.trim()) {
+        this.error = 'El nombre de usuario es requerido'
+        return
+      }
+      
+      if (!this.form.password.trim()) {
+        this.error = 'La contraseña es requerida'
+        return
+      }
+      
       this.loading = true
-      this.errorMessage = ''
       
       try {
-        const result = await authService.login(this.credentials.username, this.credentials.password)
+        console.log('🔄 Intentando login con:', {
+          username: this.form.username,
+          password: '***'
+        })
         
-        // Redirigir según el rol
-        if (result.user.role === 'student') {
-          this.$router.push('/student-dashboard')
-        } else if (result.user.role === 'teacher') {
-          this.$router.push('/teacher-dashboard')
-        }
+        // Llamar al servicio de autenticación
+        const response = await authService.login({
+          username: this.form.username.trim(),
+          password: this.form.password
+        })
+        
+        console.log('✅ Login exitoso:', response)
+        
+        // Redirigir al dashboard correspondiente
+        this.redirectToDashboard(response.user.role)
+        
       } catch (error) {
-        this.errorMessage = error.message || 'Error al iniciar sesión. Inténtalo de nuevo.'
+        console.error('❌ Error en login:', error)
+        this.error = error.message || 'Error al iniciar sesión'
       } finally {
         this.loading = false
+      }
+    },
+    
+    redirectToDashboard(userRole = null) {
+      try {
+        // Si no se proporciona el rol, obtenerlo del servicio
+        const role = userRole || authService.getUserRole()
+        
+        console.log('🔄 Redirigiendo usuario con rol:', role)
+        
+        if (role === 'teacher') {
+          this.$router.push('/teacher-dashboard')
+        } else if (role === 'student') {
+          this.$router.push('/student-dashboard')
+        } else {
+          console.error('Rol desconocido:', role)
+          this.error = 'Rol de usuario no válido'
+        }
+      } catch (error) {
+        console.error('Error en redirección:', error)
+        this.error = 'Error al redirigir al dashboard'
       }
     }
   }
@@ -100,31 +154,32 @@ export default {
 
 <style scoped>
 .login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .login-card {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  padding: 48px;
-  border-radius: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  padding: 40px;
   width: 100%;
-  max-width: 420px;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.login-card h2 {
-  text-align: center;
-  margin-bottom: 36px;
+h1 {
   color: #2d3748;
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
+  text-align: center;
+  margin-bottom: 32px;
   background: linear-gradient(135deg, #667eea, #764ba2);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -132,75 +187,72 @@ export default {
 }
 
 .login-form {
-  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .form-group {
-  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
 }
 
 .form-group label {
-  display: block;
-  margin-bottom: 8px;
   color: #4a5568;
   font-weight: 600;
   font-size: 14px;
+  margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .form-group input {
-  width: 100%;
-  padding: 16px 20px;
+  padding: 14px 16px;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
   font-size: 16px;
   transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.9);
-  color: #2d3748;
+  background: white;
 }
 
 .form-group input:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  background: white;
+  transform: translateY(-1px);
 }
 
-.form-group input::placeholder {
+.form-group input:disabled {
+  background: #f7fafc;
   color: #a0aec0;
-}
-
-.success-message {
-  color: #48bb78;
-  background: rgba(104, 211, 145, 0.1);
-  border: 1px solid rgba(104, 211, 145, 0.3);
-  padding: 14px 18px;
-  border-radius: 12px;
-  margin-bottom: 24px;
-  text-align: center;
-  font-weight: 500;
-  backdrop-filter: blur(5px);
+  cursor: not-allowed;
 }
 
 .error-message {
   color: #e53e3e;
   background: rgba(254, 178, 178, 0.2);
   border: 1px solid rgba(254, 178, 178, 0.5);
-  padding: 14px 18px;
-  border-radius: 12px;
-  margin-bottom: 24px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
   text-align: center;
-  font-weight: 500;
-  backdrop-filter: blur(5px);
+}
+
+.success-message {
+  color: #38a169;
+  background: rgba(154, 230, 180, 0.2);
+  border: 1px solid rgba(154, 230, 180, 0.5);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
 }
 
 .login-button {
-  width: 100%;
-  padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   border: none;
+  padding: 16px 24px;
   border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
@@ -208,11 +260,12 @@ export default {
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin-top: 8px;
 }
 
 .login-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
 }
 
 .login-button:disabled {
@@ -221,48 +274,35 @@ export default {
   transform: none;
 }
 
-.links {
+.login-links {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
   text-align: center;
-  margin-top: 32px;
 }
 
-.links a {
+.link {
   color: #667eea;
   text-decoration: none;
-  margin: 0 12px;
+  font-size: 14px;
   font-weight: 500;
   transition: all 0.3s ease;
-  position: relative;
 }
 
-.links a:hover {
+.link:hover {
   color: #764ba2;
-  text-decoration: none;
+  text-decoration: underline;
 }
 
-.links a:hover::after {
-  width: 100%;
-}
-
-.links a::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  height: 2px;
-  width: 0;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  transition: width 0.3s ease;
-}
-
-.forgot-password {
-  display: block;
-  margin-bottom: 16px;
-  font-size: 14px;
-}
-
-.register-link {
-  font-weight: 600;
-  font-size: 16px;
+@media (max-width: 480px) {
+  .login-card {
+    padding: 24px;
+    margin: 16px;
+  }
+  
+  h1 {
+    font-size: 24px;
+  }
 }
 </style>

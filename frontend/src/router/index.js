@@ -10,6 +10,7 @@ import StudentDashboard from '../views/StudentDashboard.vue'
 import TeacherDashboard from '../views/TeacherDashboard.vue'
 import NotFoundView from '../views/NotFoundView.vue'
 import ErrorView from '../views/ErrorView.vue'
+import SubjectsManager from '../views/SubjectsManager.vue'
 
 Vue.use(VueRouter)
 
@@ -85,7 +86,14 @@ const routes = [
     path: '*',
     name: 'NotFound', 
     component: NotFoundView
-  }
+  },
+  // 🆕 Rutas para gestión de asignaturas 
+  {
+  path: '/subjects',
+  name: 'Subjects',
+  component: SubjectsManager,
+  meta: { requiresAuth: true } // Asegurar que requiere autenticación
+}
 ]
 
 const router = new VueRouter({

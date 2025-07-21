@@ -298,7 +298,7 @@ app.post('/api/forgot-password', async (req, res) => {
     await user.save();
 
     // Configurar email
-    const resetUrl = `http://localhost:8080/reset-password?token=${resetToken}`;
+    const resetUrl = `http://localhost:8080/#/reset-password?token=${resetToken}`;
     
     const mailOptions = {
       from: 'plataforma.educativa.proyecto@gmail.com',
@@ -722,6 +722,725 @@ app.get('/api/teacher/students', async (req, res) => {
     res.json(students);
   } catch (error) {
     console.error('Error obteniendo estudiantes:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// ============= ENDPOINTS DE ASIGNATURAS MEJORADOS =============
+
+// ============= ENDPOINTS FALTANTES EN server.js =============
+
+// OBTENER TODAS LAS ASIGNATURAS (básico)
+app.get('/api/subjects', async (req, res) => {
+  try {
+    const subjects = await Subject.findAll({
+      order: [['subject_name', 'ASC']]
+    });
+    res.json(subjects);
+  } catch (error) {
+    console.error('Error obteniendo asignaturas:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+
+
+// CREAR UNA NUEVA ASIGNATURA (profesor)
+app.post('/api/subjects', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { name } = req.body;
+    
+    // Verificar que es profesor
+    const user = await User.findOne({
+      where: { id: decoded.userId },
+      include: [{
+        model: Role,
+        as: 'roleData'
+      }]
+    });
+    
+    if (!user || user.roleData.role_name !== 'teacher') {
+      return res.status(403).json({ error: 'Solo los profesores pueden crear asignaturas' });
+    }
+    
+    // Verificar que no existe una asignatura con el mismo nombre
+    const existingSubject = await Subject.findOne({
+      where: { subject_name: name }
+    });
+    
+    if (existingSubject) {
+      return res.status(409).json({ error: 'Ya existe una asignatura con este nombre' });
+    }
+    
+    // Crear la asignatura
+    const newSubject = await Subject.create({
+      subject_name: name
+    });
+    
+    // Crear una relación "dummy" para marcar que el profesor da esta asignatura
+    await StudentsTeachersRelation.create({
+      id_student: decoded.userId, // Usar el mismo ID para marcar como relación de profesor
+      id_teacher: decoded.userId,
+      id_subject: newSubject.id
+    });
+    
+    console.log(`✅ Profesor ${decoded.userId} creó asignatura: ${name}`);
+    
+    res.json({ 
+      message: 'Asignatura creada exitosamente',
+      subject: newSubject
+    });
+  } catch (error) {
+    console.error('Error creando asignatura:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+//  ACTUALIZAR UNA ASIGNATURA (profesor)
+app.put('/api/subjects/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const subjectId = req.params.id;
+    const { name } = req.body;
+    
+    // Verificar que es profesor
+    const user = await User.findOne({
+      where: { id: decoded.userId },
+      include: [{
+        model: Role,
+        as: 'roleData'
+      }]
+    });
+    
+    if (!user || user.roleData.role_name !== 'teacher') {
+      return res.status(403).json({ error: 'Solo los profesores pueden editar asignaturas' });
+    }
+    
+    // Verificar que el profesor da esta asignatura
+    const teacherRelation = await StudentsTeachersRelation.findOne({
+      where: { 
+        id_teacher: decoded.userId,
+        id_subject: subjectId
+      }
+    });
+    
+    if (!teacherRelation) {
+      return res.status(403).json({ error: 'No tienes permisos para editar esta asignatura' });
+    }
+    
+    // Verificar que no existe otra asignatura con el mismo nombre
+    const existingSubject = await Subject.findOne({
+      where: { 
+        subject_name: name,
+        id: { [require('sequelize').Op.ne]: subjectId } // Excluir la asignatura actual
+      }
+    });
+    
+    if (existingSubject) {
+      return res.status(409).json({ error: 'Ya existe otra asignatura con este nombre' });
+    }
+    
+    // Actualizar la asignatura
+    const subject = await Subject.findByPk(subjectId);
+    if (!subject) {
+      return res.status(404).json({ error: 'Asignatura no encontrada' });
+    }
+    
+    subject.subject_name = name;
+    await subject.save();
+    
+    console.log(`✅ Profesor ${decoded.userId} actualizó asignatura ${subjectId}: ${name}`);
+    
+    res.json({ 
+      message: 'Asignatura actualizada exitosamente',
+      subject: subject
+    });
+  } catch (error) {
+    console.error('Error actualizando asignatura:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+//  ELIMINAR UNA ASIGNATURA (profesor)
+app.delete('/api/subjects/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const subjectId = req.params.id;
+    
+    // Verificar que es profesor
+    const user = await User.findOne({
+      where: { id: decoded.userId },
+      include: [{
+        model: Role,
+        as: 'roleData'
+      }]
+    });
+    
+    if (!user || user.roleData.role_name !== 'teacher') {
+      return res.status(403).json({ error: 'Solo los profesores pueden eliminar asignaturas' });
+    }
+    
+    // Verificar que el profesor da esta asignatura
+    const teacherRelation = await StudentsTeachersRelation.findOne({
+      where: { 
+        id_teacher: decoded.userId,
+        id_subject: subjectId
+      }
+    });
+    
+    if (!teacherRelation) {
+      return res.status(403).json({ error: 'No tienes permisos para eliminar esta asignatura' });
+    }
+    
+    // Eliminar todas las relaciones de la asignatura
+    await StudentsTeachersRelation.destroy({
+      where: { id_subject: subjectId }
+    });
+    
+    // Eliminar la asignatura
+    const deletedRows = await Subject.destroy({
+      where: { id: subjectId }
+    });
+    
+    if (deletedRows === 0) {
+      return res.status(404).json({ error: 'Asignatura no encontrada' });
+    }
+    
+    console.log(`✅ Profesor ${decoded.userId} eliminó asignatura ${subjectId}`);
+    
+    res.json({ message: 'Asignatura eliminada exitosamente' });
+  } catch (error) {
+    console.error('Error eliminando asignatura:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// OBTENER TODAS LAS ASIGNATURAS CON INFORMACIÓN DE PROFESORES (para estudiantes)
+app.get('/api/subjects/all-with-teachers', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // Obtener todas las asignaturas
+    const allSubjects = await Subject.findAll({
+      order: [['subject_name', 'ASC']]
+    });
+    
+    // Para cada asignatura, obtener los profesores que la dan
+    const subjectsWithTeachers = await Promise.all(
+      allSubjects.map(async (subject) => {
+        // Buscar profesores únicos que dan esta asignatura
+        const relations = await StudentsTeachersRelation.findAll({
+          where: { id_subject: subject.id },
+          include: [{
+            model: User,
+            as: 'teacher',
+            attributes: ['id', 'name', 'surnames'],
+            include: [{
+              model: Role,
+              as: 'roleData',
+              where: { role_name: 'teacher' }
+            }]
+          }]
+        });
+        
+        // Agrupar por profesor y contar estudiantes (excluyendo relaciones dummy)
+        const teacherCounts = {};
+        relations.forEach(relation => {
+          // Solo contar si no es una relación dummy (donde id_student = id_teacher)
+          if (relation.id_student !== relation.id_teacher) {
+            const teacherId = relation.teacher.id;
+            if (teacherCounts[teacherId]) {
+              teacherCounts[teacherId].studentCount++;
+            } else {
+              teacherCounts[teacherId] = {
+                id: relation.teacher.id,
+                name: relation.teacher.name,
+                surnames: relation.teacher.surnames,
+                studentCount: 1
+              };
+            }
+          } else {
+            // Es una relación dummy, añadir el profesor con 0 estudiantes si no existe
+            const teacherId = relation.teacher.id;
+            if (!teacherCounts[teacherId]) {
+              teacherCounts[teacherId] = {
+                id: relation.teacher.id,
+                name: relation.teacher.name,
+                surnames: relation.teacher.surnames,
+                studentCount: 0
+              };
+            }
+          }
+        });
+        
+        const teachers = Object.values(teacherCounts);
+        
+        return {
+          id: subject.id,
+          subject_name: subject.subject_name,
+          teachers: teachers,
+          hasTeachers: teachers.length > 0
+        };
+      })
+    );
+    
+    res.json(subjectsWithTeachers);
+  } catch (error) {
+    console.error('Error obteniendo asignaturas con profesores:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// UNIRSE COMO PROFESOR A UNA ASIGNATURA EXISTENTE
+app.post('/api/teacher/join-subject', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { subjectId } = req.body;
+    
+    // Verificar que es profesor
+    const user = await User.findOne({
+      where: { id: decoded.userId },
+      include: [{
+        model: Role,
+        as: 'roleData'
+      }]
+    });
+    
+    if (!user || user.roleData.role_name !== 'teacher') {
+      return res.status(403).json({ error: 'Solo los profesores pueden unirse a asignaturas' });
+    }
+    
+    // Verificar que la asignatura existe
+    const subject = await Subject.findByPk(subjectId);
+    if (!subject) {
+      return res.status(404).json({ error: 'Asignatura no encontrada' });
+    }
+    
+    // Verificar que el profesor no esté ya dando esta asignatura
+    const existingRelation = await StudentsTeachersRelation.findOne({
+      where: { 
+        id_teacher: decoded.userId,
+        id_subject: subjectId 
+      }
+    });
+    
+    if (existingRelation) {
+      return res.status(409).json({ error: 'Ya estás dando esta asignatura' });
+    }
+    
+    // Crear una relación "dummy" para marcar que el profesor da esta asignatura
+    // Usaremos id_student = id_teacher para indicar que es una relación de profesor sin estudiantes
+    await StudentsTeachersRelation.create({
+      id_student: decoded.userId, // Usar el mismo ID para marcar como relación de profesor
+      id_teacher: decoded.userId,
+      id_subject: subjectId
+    });
+    
+    console.log(`✅ Profesor ${decoded.userId} se unió a asignatura ${subjectId}`);
+    
+    res.json({ 
+      message: 'Te has unido exitosamente a la asignatura',
+      subject: subject.subject_name
+    });
+  } catch (error) {
+    console.error('Error uniéndose a asignatura:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+
+// ACTUALIZAR ENDPOINT EXISTENTE DE ASIGNATURAS DEL PROFESOR
+app.get('/api/teacher/subjects', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // Obtener todas las relaciones del profesor
+    const relations = await StudentsTeachersRelation.findAll({
+      where: { id_teacher: decoded.userId },
+      include: [{
+        model: Subject,
+        as: 'subject'
+      }]
+    });
+    
+    // Agrupar por asignatura y contar estudiantes (excluyendo relaciones dummy)
+    const subjectCounts = {};
+    relations.forEach(relation => {
+      const subjectId = relation.subject.id;
+      const subjectName = relation.subject.subject_name;
+      
+      if (subjectCounts[subjectId]) {
+        // Solo contar si no es una relación dummy
+        if (relation.id_student !== relation.id_teacher) {
+          subjectCounts[subjectId].studentCount++;
+        }
+      } else {
+        subjectCounts[subjectId] = {
+          id: subjectId,
+          subject_name: subjectName,
+          studentCount: relation.id_student !== relation.id_teacher ? 1 : 0
+        };
+      }
+    });
+    
+    const teacherSubjects = Object.values(subjectCounts);
+    
+    res.json(teacherSubjects);
+  } catch (error) {
+    console.error('Error obteniendo asignaturas del profesor:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// OBTENER ESTUDIANTES ASIGNADOS A UNA ASIGNATURA (profesor)
+app.get('/api/teacher/subject/:subjectId/students', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const subjectId = req.params.subjectId;
+    
+    // Verificar que es profesor
+    const user = await User.findOne({
+      where: { id: decoded.userId },
+      include: [{
+        model: Role,
+        as: 'roleData'
+      }]
+    });
+    
+    if (!user || user.roleData.role_name !== 'teacher') {
+      return res.status(403).json({ error: 'Solo los profesores pueden ver estudiantes asignados' });
+    }
+    
+    // Verificar que el profesor imparte esta asignatura
+    const teacherRelation = await StudentsTeachersRelation.findOne({
+      where: { 
+        id_teacher: decoded.userId,
+        id_subject: subjectId
+      }
+    });
+    
+    if (!teacherRelation) {
+      return res.status(403).json({ error: 'No tienes permisos para ver estudiantes de esta asignatura' });
+    }
+    
+    // Obtener estudiantes asignados (excluyendo relaciones dummy)
+    const relations = await StudentsTeachersRelation.findAll({
+      where: { 
+        id_subject: subjectId,
+        id_student: { [require('sequelize').Op.ne]: sequelize.col('id_teacher') }
+      },
+      include: [{
+        model: User,
+        as: 'student',
+        attributes: ['id', 'name', 'surnames', 'email', 'avatar']
+      }]
+    });
+    
+    const students = relations.map(relation => ({
+      id: relation.student.id,
+      name: relation.student.name,
+      surnames: relation.student.surnames,
+      email: relation.student.email,
+      avatar: relation.student.avatar ? `http://localhost:${PORT}/uploads/avatars/${relation.student.avatar}` : null
+    }));
+    
+    res.json(students);
+  } catch (error) {
+    console.error('Error obteniendo estudiantes asignados:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// OBTENER ESTUDIANTES DISPONIBLES PARA ASIGNAR (profesor) - VERSIÓN CORREGIDA
+app.get('/api/teacher/subject/:subjectId/available-students', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const subjectId = req.params.subjectId;
+    
+    // Verificar que es profesor
+    const user = await User.findOne({
+      where: { id: decoded.userId },
+      include: [{
+        model: Role,
+        as: 'roleData'
+      }]
+    });
+    
+    if (!user || user.roleData.role_name !== 'teacher') {
+      return res.status(403).json({ error: 'Solo los profesores pueden ver estudiantes disponibles' });
+    }
+    
+    // Verificar que el profesor imparte esta asignatura
+    const teacherRelation = await StudentsTeachersRelation.findOne({
+      where: { 
+        id_teacher: decoded.userId,
+        id_subject: subjectId
+      }
+    });
+    
+    if (!teacherRelation) {
+      return res.status(403).json({ error: 'No tienes permisos para gestionar esta asignatura' });
+    }
+    
+    // Obtener IDs de estudiantes ya asignados a esta asignatura
+    const assignedRelations = await StudentsTeachersRelation.findAll({
+      where: { 
+        id_subject: subjectId,
+        id_student: { [require('sequelize').Op.ne]: sequelize.col('id_teacher') }
+      },
+      attributes: ['id_student']
+    });
+    
+    const assignedStudentIds = assignedRelations.map(r => r.id_student);
+    
+    // Construir la consulta para estudiantes disponibles
+    let whereClause = {
+      role: 1 // Solo estudiantes
+    };
+    
+    // Solo agregar la condición NOT IN si hay estudiantes asignados
+    if (assignedStudentIds.length > 0) {
+      whereClause.id = { [require('sequelize').Op.notIn]: assignedStudentIds };
+    }
+    
+    // Obtener todos los estudiantes que NO están asignados a esta asignatura
+    const availableStudents = await User.findAll({
+      where: whereClause,
+      attributes: ['id', 'name', 'surnames', 'email', 'avatar'],
+      order: [['name', 'ASC'], ['surnames', 'ASC']]
+    });
+    
+    const students = availableStudents.map(student => ({
+      id: student.id,
+      name: student.name,
+      surnames: student.surnames,
+      email: student.email,
+      avatar: student.avatar ? `http://localhost:${PORT}/uploads/avatars/${student.avatar}` : null
+    }));
+    
+    console.log(`✅ Estudiantes disponibles para asignatura ${subjectId}: ${students.length}`);
+    
+    res.json(students);
+  } catch (error) {
+    console.error('Error obteniendo estudiantes disponibles:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// ASIGNAR ESTUDIANTE A ASIGNATURA (profesor)
+app.post('/api/teacher/assign-student', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { studentId, subjectId } = req.body;
+    
+    // Verificar que es profesor
+    const user = await User.findOne({
+      where: { id: decoded.userId },
+      include: [{
+        model: Role,
+        as: 'roleData'
+      }]
+    });
+    
+    if (!user || user.roleData.role_name !== 'teacher') {
+      return res.status(403).json({ error: 'Solo los profesores pueden asignar estudiantes' });
+    }
+    
+    // Verificar que el profesor imparte esta asignatura
+    const teacherRelation = await StudentsTeachersRelation.findOne({
+      where: { 
+        id_teacher: decoded.userId,
+        id_subject: subjectId
+      }
+    });
+    
+    if (!teacherRelation) {
+      return res.status(403).json({ error: 'No tienes permisos para asignar estudiantes a esta asignatura' });
+    }
+    
+    // Verificar que el estudiante existe y es estudiante
+    const student = await User.findOne({
+      where: { 
+        id: studentId,
+        role: 1 // Solo estudiantes
+      }
+    });
+    
+    if (!student) {
+      return res.status(404).json({ error: 'Estudiante no encontrado' });
+    }
+    
+    // Verificar que el estudiante no esté ya asignado
+    const existingRelation = await StudentsTeachersRelation.findOne({
+      where: {
+        id_student: studentId,
+        id_subject: subjectId
+      }
+    });
+    
+    if (existingRelation) {
+      return res.status(409).json({ error: 'El estudiante ya está asignado a esta asignatura' });
+    }
+    
+    // Crear la relación
+    await StudentsTeachersRelation.create({
+      id_student: studentId,
+      id_teacher: decoded.userId,
+      id_subject: subjectId
+    });
+    
+    console.log(`✅ Estudiante ${studentId} asignado a asignatura ${subjectId} por profesor ${decoded.userId}`);
+    
+    res.json({ 
+      message: 'Estudiante asignado exitosamente',
+      student: student.name + ' ' + student.surnames
+    });
+  } catch (error) {
+    console.error('Error asignando estudiante:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// DESASIGNAR ESTUDIANTE DE ASIGNATURA (profesor)
+app.post('/api/teacher/remove-student', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { studentId, subjectId } = req.body;
+    
+    // Verificar que es profesor
+    const user = await User.findOne({
+      where: { id: decoded.userId },
+      include: [{
+        model: Role,
+        as: 'roleData'
+      }]
+    });
+    
+    if (!user || user.roleData.role_name !== 'teacher') {
+      return res.status(403).json({ error: 'Solo los profesores pueden desasignar estudiantes' });
+    }
+    
+    // Verificar que el profesor imparte esta asignatura
+    const teacherRelation = await StudentsTeachersRelation.findOne({
+      where: { 
+        id_teacher: decoded.userId,
+        id_subject: subjectId
+      }
+    });
+    
+    if (!teacherRelation) {
+      return res.status(403).json({ error: 'No tienes permisos para desasignar estudiantes de esta asignatura' });
+    }
+    
+    // Eliminar la relación
+    const deletedRows = await StudentsTeachersRelation.destroy({
+      where: {
+        id_student: studentId,
+        id_subject: subjectId,
+        id_teacher: decoded.userId
+      }
+    });
+    
+    if (deletedRows === 0) {
+      return res.status(404).json({ error: 'Relación no encontrada' });
+    }
+    
+    console.log(`✅ Estudiante ${studentId} desasignado de asignatura ${subjectId} por profesor ${decoded.userId}`);
+    
+    res.json({ message: 'Estudiante desasignado exitosamente' });
+  } catch (error) {
+    console.error('Error desasignando estudiante:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// ACTUALIZAR ENDPOINT DE ASIGNATURAS DETALLADAS DEL PROFESOR
+app.get('/api/teacher/subjects-detailed', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // Obtener todas las relaciones del profesor
+    const relations = await StudentsTeachersRelation.findAll({
+      where: { id_teacher: decoded.userId },
+      include: [
+        {
+          model: Subject,
+          as: 'subject'
+        },
+        {
+          model: User,
+          as: 'student',
+          attributes: ['id', 'name', 'surnames', 'email', 'avatar']
+        }
+      ]
+    });
+    
+    // Agrupar por asignatura
+    const subjectsMap = {};
+    
+    relations.forEach(relation => {
+      const subjectId = relation.subject.id;
+      const subjectName = relation.subject.subject_name;
+      
+      if (!subjectsMap[subjectId]) {
+        subjectsMap[subjectId] = {
+          id: subjectId,
+          subject_name: subjectName,
+          students: []
+        };
+      }
+      
+      // Solo agregar si no es una relación dummy
+      if (relation.id_student !== relation.id_teacher) {
+        subjectsMap[subjectId].students.push({
+          id: relation.student.id,
+          name: relation.student.name,
+          surnames: relation.student.surnames,
+          email: relation.student.email,
+          avatar: relation.student.avatar ? `http://localhost:${PORT}/uploads/avatars/${relation.student.avatar}` : null
+        });
+      }
+    });
+    
+    const detailedSubjects = Object.values(subjectsMap);
+    
+    res.json(detailedSubjects);
+  } catch (error) {
+    console.error('Error obteniendo asignaturas detalladas:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
