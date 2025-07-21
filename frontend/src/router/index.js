@@ -8,6 +8,8 @@ import ActivateAccountView from '../views/ActivateAccountView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import StudentDashboard from '../views/StudentDashboard.vue'
 import TeacherDashboard from '../views/TeacherDashboard.vue'
+
+import ChatView from '../views/ChatView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
 import ErrorView from '../views/ErrorView.vue'
 import SubjectsManager from '../views/SubjectsManager.vue'
@@ -74,6 +76,13 @@ const routes = [
     component: TeacherDashboard,
     meta: { requiresAuth: true, role: 'teacher' }
   },
+  // Ruta para el chat
+  {
+    path: '/chat',
+    name: 'Chat',
+    component: ChatView,
+    meta: { requiresAuth: true }
+  },
   // 🆕 Nueva ruta para errores con código específico
   {
     path: '/error/:code?',
@@ -89,11 +98,11 @@ const routes = [
   },
   // 🆕 Rutas para gestión de asignaturas 
   {
-  path: '/subjects',
-  name: 'Subjects',
-  component: SubjectsManager,
-  meta: { requiresAuth: true } // Asegurar que requiere autenticación
-}
+    path: '/subjects',
+    name: 'Subjects',
+    component: SubjectsManager,
+    meta: { requiresAuth: true } // Asegurar que requiere autenticación
+  }
 ]
 
 const router = new VueRouter({

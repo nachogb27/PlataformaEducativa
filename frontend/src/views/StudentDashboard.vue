@@ -12,6 +12,11 @@
               <path d="M12 2L3 7L12 12L21 7L12 2ZM3 17L12 22L21 17M3 12L12 17L21 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
+          <button @click="goToChat" class="chat-button" title="Chat">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
           <button @click="goToProfile" class="profile-button" title="Mi Perfil">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
@@ -232,6 +237,9 @@ export default {
     goToLogin() {
       authService.logout()
       this.$router.push('/login')
+    },
+    goToChat() {
+      this.$router.push('/chat')
     }
   }
 }
@@ -283,9 +291,10 @@ export default {
   gap: 12px;
 }
 
-.profile-button,
-.subjects-button,
-.logout-button {
+  .profile-button,
+  .subjects-button,
+  .chat-button,
+  .logout-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -299,10 +308,23 @@ export default {
   position: relative;
 }
 
+  .subjects-button {
+    margin-right: 8px;
+  }
+  .chat-button {
+    background: linear-gradient(135deg, #6a9de0, #64cffa);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+  }
+  .chat-button:hover {
+    background: #2563eb;
+  }
+
 .subjects-button {
   background: linear-gradient(135deg, #48bb78, #38a169);
+  color: white;
+  box-shadow: 0 4px 15px rgba(72, 187, 120, 0.2);
 }
-
 .subjects-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);

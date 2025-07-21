@@ -1445,7 +1445,33 @@ app.get('/api/teacher/subjects-detailed', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+
+const server = app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
   console.log(`🔐 Cifrado de contraseñas: ACTIVADO (bcrypt con ${SALT_ROUNDS} rounds)`);
 });
+
+// === INTEGRACIÓN WEBSOCKET CHAT ===
+const WebSocket = require('ws');
+const wss = new WebSocket.Server({ server });
+const clients = new Map();
+wss.on('connection', (ws, req) => {
+  ws.on('message', (msg) => {
+    let data;
+    try { data = JSON.parse(msg); } catch { return; }
+    if (data.from && !ws.userId) {
+      ws.userId = data.from;
+      clients.set(ws.userId, ws);
+    }
+    if (data.to && data.text) {
+      const dest = clients.get(data.to);
+      if (dest && dest.readyState === WebSocket.OPEN) {
+        dest.send(JSON.stringify(data));
+      }
+    }
+  });
+  ws.on('close', () => {
+    if (ws.userId) clients.delete(ws.userId);
+  });
+});
+console.log('WebSocket chat server integrado en el mismo proceso Express.');

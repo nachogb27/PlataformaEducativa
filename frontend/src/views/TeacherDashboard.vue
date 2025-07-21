@@ -7,6 +7,11 @@
           <p class="welcome-text">Gestiona tus estudiantes</p>
         </div>
         <div class="header-actions">
+          <button @click="goToChat" class="chat-button" title="Chat">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
           <button @click="goToSubjects" class="subjects-button" title="Mis Asignaturas">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L3 7L12 12L21 7L12 2ZM3 17L12 22L21 17M3 12L12 17L21 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -588,6 +593,9 @@ export default {
       authService.logout()
       this.$router.push('/login')
     },
+     goToChat() {
+      this.$router.push('/chat')
+    },
     
     // Métodos de filtrado
     clearNameFilter() {
@@ -604,52 +612,32 @@ export default {
         this.currentPage = page;
       }
     },
-    
-    editStudent(student) {
-      this.editingStudent = {
-        id: student.id,
-        name: student.name,
-        surnames: student.lastName
-      }
-      this.showEditModal = true
-      this.editError = ''
-    },
-    
-    closeEditModal() {
-      this.showEditModal = false
-      this.editingStudent = {
-        id: null,
-        name: '',
-        surnames: ''
-      }
-      this.editError = ''
-    },
-    
+
+    // Método para guardar cambios de estudiante (edición)
     async saveStudent() {
-      this.saving = true
-      this.editError = ''
-      
+      this.editError = '';
+      this.saving = true;
       try {
         await dataService.editStudent(this.editingStudent.id, {
           name: this.editingStudent.name,
           surnames: this.editingStudent.surnames
-        })
-        
+        });
+
         // Actualizar la lista local
-        const studentIndex = this.students.findIndex(s => s.id === this.editingStudent.id)
+        const studentIndex = this.students.findIndex(s => s.id === this.editingStudent.id);
         if (studentIndex !== -1) {
-          this.students[studentIndex].name = this.editingStudent.name
-          this.students[studentIndex].lastName = this.editingStudent.surnames
+          this.students[studentIndex].name = this.editingStudent.name;
+          this.students[studentIndex].lastName = this.editingStudent.surnames;
         }
-        
-        this.closeEditModal()
+
+        this.closeEditModal();
       } catch (error) {
-        this.editError = error.message || 'Error al guardar los cambios'
+        this.editError = error.message || 'Error al guardar los cambios';
       } finally {
-        this.saving = false
+        this.saving = false;
       }
     },
-    
+
     async deleteStudent(student) {
       if (confirm(`¿Estás seguro de que deseas eliminar a ${student.name} ${student.lastName} de tu lista?`)) {
         try {
@@ -1398,6 +1386,28 @@ export default {
   color: white;
   border-color: #667eea;
 }
+
+ .chat-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+.chat-button {
+    background: linear-gradient(135deg, #6a9de0, #64cffa);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+  }
+  .chat-button:hover {
+    background: #2563eb;
+  }
 
 @media (max-width: 768px) {
   .search-filters {
