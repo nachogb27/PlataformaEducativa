@@ -8,11 +8,11 @@ import ActivateAccountView from '../views/ActivateAccountView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import StudentDashboard from '../views/StudentDashboard.vue'
 import TeacherDashboard from '../views/TeacherDashboard.vue'
-
 import ChatView from '../views/ChatView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
 import ErrorView from '../views/ErrorView.vue'
 import SubjectsManager from '../views/SubjectsManager.vue'
+import ChatHistoryView from '../views/ChatHistoryView.vue'
 
 Vue.use(VueRouter)
 
@@ -102,7 +102,13 @@ const routes = [
     name: 'Subjects',
     component: SubjectsManager,
     meta: { requiresAuth: true } // Asegurar que requiere autenticación
-  }
+  },
+  {
+  path: '/chat-history',
+  name: 'ChatHistory', 
+  component: ChatHistoryView,
+  meta: { requiresAuth: true }
+}
 ]
 
 const router = new VueRouter({
