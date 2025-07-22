@@ -1759,10 +1759,9 @@ const server = app.listen(PORT, () => {
   console.log(`🔐 Cifrado de contraseñas: ACTIVADO (bcrypt con ${SALT_ROUNDS} rounds)`);
 });
 
-// === INTEGRACIÓN WEBSOCKET CHAT ===
-// REEMPLAZA tu sección WebSocket existente con este código completo:
+// REEMPLAZA tu sección WebSocket con este código (SIN guardado automático):
 
-// === INTEGRACIÓN WEBSOCKET CHAT COMPLETO ===
+// === INTEGRACIÓN WEBSOCKET CHAT SIN GUARDADO AUTOMÁTICO ===
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ server });
 const clients = new Map(); // userId -> websocket
@@ -1789,94 +1788,40 @@ wss.on('connection', (ws, req) => {
           userId: data.userId,
           timestamp: new Date()
         }));
+        
+        // Enviar lista de usuarios online
+        const onlineUsers = Array.from(clients.keys());
+        clients.forEach((clientWs) => {
+          if (clientWs.readyState === WebSocket.OPEN) {
+            clientWs.send(JSON.stringify({
+              type: 'users_online',
+              users: onlineUsers
+            }));
+          }
+        });
         return;
       }
 
-      // Envío de mensaje
+      // Envío de mensaje (SOLO WebSocket, NO guardar en BD)
       if (data.type === 'message' && data.from && data.to && data.text) {
         const timestamp = new Date();
         
-        // Obtener información de usuarios para el mensaje
-        const senderUser = await User.findByPk(data.from, {
-          include: [{ model: Role, as: 'roleData' }]
-        });
-        const receiverUser = await User.findByPk(data.to, {
-          include: [{ model: Role, as: 'roleData' }]
-        });
-
-        if (!senderUser || !receiverUser) {
-          ws.send(JSON.stringify({
-            type: 'error',
-            message: 'Usuario no encontrado'
-          }));
-          return;
-        }
-
-        // Crear objeto de mensaje completo
-        const messageData = {
-          content: data.text,
-          timestamp: timestamp,
-          sender: {
-            userId: senderUser.id,
-            username: senderUser.username,
-            role: senderUser.roleData.role_name,
-            name: `${senderUser.name} ${senderUser.surnames}`
-          },
-          receiver: {
-            userId: receiverUser.id,
-            username: receiverUser.username,
-            role: receiverUser.roleData.role_name,
-            name: `${receiverUser.name} ${receiverUser.surnames}`
-          }
-        };
-
-        // Buscar o crear conversación
-        let conversation = await Conversation.findConversationBetween(data.from, data.to);
-        if (!conversation) {
-          conversation = new Conversation({
-            participants: [
-              {
-                userId: messageData.sender.userId,
-                username: messageData.sender.username,
-                role: messageData.sender.role,
-                name: messageData.sender.name
-              },
-              {
-                userId: messageData.receiver.userId,
-                username: messageData.receiver.username,
-                role: messageData.receiver.role,
-                name: messageData.receiver.name
-              }
-            ]
-          });
-          await conversation.save();
-        }
-
-        // Guardar mensaje en MongoDB
-        const newMessage = new Message(messageData);
-        await newMessage.save();
-
-        // Actualizar conversación
-        await conversation.updateLastActivity(messageData);
-
         // Preparar mensaje para envío WebSocket
         const wsMessage = {
           type: 'message',
           from: data.from,
           to: data.to,
           text: data.text,
-          timestamp: timestamp,
-          messageId: newMessage._id,
-          conversationId: conversation._id,
-          senderName: messageData.sender.name,
-          receiverName: messageData.receiver.name
+          timestamp: timestamp
         };
 
         // Enviar a destinatario si está conectado
         const recipientWs = clients.get(data.to);
         if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
           recipientWs.send(JSON.stringify(wsMessage));
-          console.log(`📤 Mensaje enviado a usuario ${data.to}`);
+          console.log(`📤 Mensaje enviado en tiempo real a usuario ${data.to}`);
+        } else {
+          console.log(`📴 Usuario ${data.to} no está conectado`);
         }
 
         // Confirmar al remitente
@@ -1885,10 +1830,10 @@ wss.on('connection', (ws, req) => {
           type: 'message_sent'
         }));
 
-        console.log(`💬 Mensaje guardado: ${data.from} -> ${data.to}`);
+        console.log(`💬 Mensaje en tiempo real: ${data.from} -> ${data.to} (NO guardado)`);
       }
 
-      // Solicitud de historial
+      // Solicitud de historial (desde MongoDB)
       if (data.type === 'get_history' && data.with && ws.userId) {
         try {
           const messages = await Message.find({
@@ -1911,7 +1856,7 @@ wss.on('connection', (ws, req) => {
             with: data.with
           }));
           
-          console.log(`📜 Historial enviado: ${messages.length} mensajes`);
+          console.log(`📜 Historial enviado: ${messages.length} mensajes guardados`);
         } catch (error) {
           console.error('Error obteniendo historial:', error);
           ws.send(JSON.stringify({
@@ -1935,6 +1880,17 @@ wss.on('connection', (ws, req) => {
     if (ws.userId) {
       clients.delete(ws.userId);
       console.log(`👋 Usuario ${ws.userId} desconectado del WebSocket`);
+      
+      // Notificar a otros usuarios que este usuario se desconectó
+      const onlineUsers = Array.from(clients.keys());
+      clients.forEach((clientWs) => {
+        if (clientWs.readyState === WebSocket.OPEN) {
+          clientWs.send(JSON.stringify({
+            type: 'users_online',
+            users: onlineUsers
+          }));
+        }
+      });
     }
   });
 
@@ -1947,4 +1903,4 @@ wss.on('connection', (ws, req) => {
   });
 });
 
-console.log('🔄 WebSocket chat server con MongoDB integrado iniciado.');
+console.log('🔄 WebSocket chat en tiempo real iniciado (sin guardado automático).');
