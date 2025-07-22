@@ -4,15 +4,30 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt'); // 🆕 Importar bcrypt
 const nodemailer = require('nodemailer');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { User, Role, Subject, StudentsTeachersRelation, Session, sequelize } = require('./index');
+const mongoose = require('mongoose');
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const fs = require('fs').promises;
+const path = require('path');
+const { Message, Conversation } = require('./models/chat.model');
 
 const app = express();
 const PORT = 3000;
 const JWT_SECRET = 'tu_clave_secreta_jwt';
 const TEACHER_TOKEN = '3rhb23uydb238ry6g2429hrh'; // Token global para profesores
+
+//Configuracion de MongoDB
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/plataforma_educativa';
+
+mongoose.connect(MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  console.log('🍃 Conectado a MongoDB para el chat');
+}).catch(error => {
+  console.error('❌ Error conectando a MongoDB:', error);
+});
 
 // 🆕 Configuración de bcrypt
 const SALT_ROUNDS = 12; // Número de rondas de salt (12 es un buen balance seguridad/performance)
@@ -1444,6 +1459,299 @@ app.get('/api/teacher/subjects-detailed', async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+// ============= AÑADIR ESTOS ENDPOINTS AL FINAL DE server.js =============
+// (Justo antes de la línea: const server = app.listen(PORT, () => {)
+
+// OBTENER USUARIOS DISPONIBLES PARA CHAT
+app.get('/api/chat/available-users', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    const user = await User.findByPk(decoded.userId, {
+      include: [{
+        model: Role,
+        as: 'roleData'
+      }]
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    let availableUsers = [];
+
+    if (user.roleData.role_name === 'student') {
+      // Estudiante: mostrar sus profesores
+      const relations = await StudentsTeachersRelation.findAll({
+        where: { id_student: decoded.userId },
+        include: [{
+          model: User,
+          as: 'teacher',
+          attributes: ['id', 'name', 'surnames', 'email', 'username', 'avatar']
+        }]
+      });
+
+      availableUsers = relations.map(relation => ({
+        userId: relation.teacher.id,
+        name: relation.teacher.name,
+        surnames: relation.teacher.surnames,
+        email: relation.teacher.email,
+        username: relation.teacher.username,
+        role: 'teacher',
+        avatar: relation.teacher.avatar ? `http://localhost:${PORT}/uploads/avatars/${relation.teacher.avatar}` : null
+      }));
+
+    } else if (user.roleData.role_name === 'teacher') {
+      // Profesor: mostrar sus estudiantes
+      const relations = await StudentsTeachersRelation.findAll({
+        where: { 
+          id_teacher: decoded.userId,
+          id_student: { [require('sequelize').Op.ne]: decoded.userId } // Excluir relaciones dummy
+        },
+        include: [{
+          model: User,
+          as: 'student',
+          attributes: ['id', 'name', 'surnames', 'email', 'username', 'avatar']
+        }]
+      });
+
+      // Eliminar duplicados si un estudiante está en múltiples asignaturas
+      const uniqueStudents = new Map();
+      relations.forEach(relation => {
+        uniqueStudents.set(relation.student.id, {
+          userId: relation.student.id,
+          name: relation.student.name,
+          surnames: relation.student.surnames,
+          email: relation.student.email,
+          username: relation.student.username,
+          role: 'student',
+          avatar: relation.student.avatar ? `http://localhost:${PORT}/uploads/avatars/${relation.student.avatar}` : null
+        });
+      });
+
+      availableUsers = Array.from(uniqueStudents.values());
+    }
+
+    console.log(`✅ Usuarios disponibles para ${user.roleData.role_name}:`, availableUsers.length);
+    res.json(availableUsers);
+  } catch (error) {
+    console.error('Error obteniendo usuarios disponibles:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// OBTENER CONVERSACIONES DEL USUARIO
+app.get('/api/chat/conversations', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    const conversations = await Conversation.find({
+      'participants.userId': decoded.userId,
+      isActive: true
+    }).sort({ updatedAt: -1 });
+
+    console.log(`📋 ✅ Conversaciones encontradas para usuario ${decoded.userId}: ${conversations.length}`);
+    
+    res.json(conversations);
+  } catch (error) {
+    console.error('Error obteniendo conversaciones:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// GUARDAR CONVERSACIÓN
+app.post('/api/chat/save-conversation', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { participantId, messages = [] } = req.body;
+
+    // Obtener datos de ambos usuarios
+    const currentUser = await User.findByPk(decoded.userId, {
+      include: [{ model: Role, as: 'roleData' }]
+    });
+    const otherUser = await User.findByPk(participantId, {
+      include: [{ model: Role, as: 'roleData' }]
+    });
+
+    if (!currentUser || !otherUser) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // Buscar conversación existente
+    let conversation = await Conversation.findConversationBetween(decoded.userId, participantId);
+
+    // Si no existe, crear nueva conversación
+    if (!conversation) {
+      conversation = new Conversation({
+        participants: [
+          {
+            userId: currentUser.id,
+            username: currentUser.username,
+            role: currentUser.roleData.role_name,
+            name: `${currentUser.name} ${currentUser.surnames}`
+          },
+          {
+            userId: otherUser.id,
+            username: otherUser.username,
+            role: otherUser.roleData.role_name,
+            name: `${otherUser.name} ${otherUser.surnames}`
+          }
+        ]
+      });
+      await conversation.save();
+    }
+
+    // Guardar mensajes si se proporcionan
+    if (messages.length > 0) {
+      const messagesToSave = messages.map(msg => ({
+        content: msg.text || msg.content,
+        timestamp: new Date(msg.timestamp),
+        sender: {
+          userId: msg.from,
+          username: msg.from === decoded.userId ? currentUser.username : otherUser.username,
+          role: msg.from === decoded.userId ? currentUser.roleData.role_name : otherUser.roleData.role_name,
+          name: msg.from === decoded.userId ? `${currentUser.name} ${currentUser.surnames}` : `${otherUser.name} ${otherUser.surnames}`
+        },
+        receiver: {
+          userId: msg.to,
+          username: msg.to === decoded.userId ? currentUser.username : otherUser.username,
+          role: msg.to === decoded.userId ? currentUser.roleData.role_name : otherUser.roleData.role_name,
+          name: msg.to === decoded.userId ? `${currentUser.name} ${currentUser.surnames}` : `${otherUser.name} ${otherUser.surnames}`
+        }
+      }));
+
+      await Message.insertMany(messagesToSave);
+
+      // Actualizar última actividad de la conversación
+      if (messagesToSave.length > 0) {
+        const lastMessage = messagesToSave[messagesToSave.length - 1];
+        await conversation.updateLastActivity(lastMessage);
+      }
+    }
+
+    console.log(`💾 ✅ Conversación guardada en MongoDB: ${conversation._id}`);
+    
+    res.json({ 
+      message: 'Conversación guardada exitosamente',
+      conversationId: conversation._id
+    });
+  } catch (error) {
+    console.error('Error guardando conversación:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// DESCARGAR CONVERSACIÓN EN CSV
+// REEMPLAZA el endpoint /api/chat/download/:conversationId con este código completo:
+
+app.get('/api/chat/download/:conversationId', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { conversationId } = req.params;
+
+    // Verificar que el usuario tiene acceso a la conversación
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversación no encontrada' });
+    }
+
+    const isParticipant = conversation.participants.some(p => p.userId === decoded.userId);
+    if (!isParticipant) {
+      return res.status(403).json({ error: 'No tienes acceso a esta conversación' });
+    }
+
+    // Obtener todos los mensajes de la conversación
+    const participantIds = conversation.participants.map(p => p.userId);
+    const messages = await Message.find({
+      $or: [
+        { 'sender.userId': { $in: participantIds }, 'receiver.userId': { $in: participantIds } }
+      ]
+    }).sort({ timestamp: 1 });
+
+    if (messages.length === 0) {
+      return res.status(404).json({ error: 'No hay mensajes en esta conversación' });
+    }
+
+    // Crear directorio de descargas si no existe
+    const downloadsDir = './downloads';
+    if (!require('fs').existsSync(downloadsDir)) {
+      require('fs').mkdirSync(downloadsDir, { recursive: true });
+    }
+
+    // Configurar el escritor CSV
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const participantName = conversation.participants
+      .find(p => p.userId !== decoded.userId)?.name || 'Unknown';
+    const filename = `chat_${participantName.replace(/\s+/g, '_')}_${timestamp}.csv`;
+    const filepath = require('path').join(downloadsDir, filename);
+
+    const csvWriter = createCsvWriter({
+      path: filepath,
+      header: [
+        { id: 'timestamp', title: 'Fecha y Hora' },
+        { id: 'senderName', title: 'Remitente' },
+        { id: 'senderRole', title: 'Rol Remitente' },
+        { id: 'receiverName', title: 'Destinatario' },
+        { id: 'receiverRole', title: 'Rol Destinatario' },
+        { id: 'content', title: 'Mensaje' }
+      ]
+    });
+
+    // Preparar datos para CSV
+    const csvData = messages.map(msg => ({
+      timestamp: new Date(msg.timestamp).toLocaleString('es-ES'),
+      senderName: msg.sender.name,
+      senderRole: msg.sender.role === 'teacher' ? 'Profesor' : 'Estudiante',
+      receiverName: msg.receiver.name,
+      receiverRole: msg.receiver.role === 'teacher' ? 'Profesor' : 'Estudiante',
+      content: msg.content
+    }));
+
+    // Escribir archivo CSV
+    await csvWriter.writeRecords(csvData);
+
+    console.log(`📥 ✅ Archivo CSV creado: ${filename} con ${csvData.length} mensajes`);
+
+    // Enviar archivo para descarga
+    res.download(filepath, filename, (err) => {
+      if (err) {
+        console.error('Error enviando archivo:', err);
+        res.status(500).json({ error: 'Error enviando archivo' });
+      }
+      
+      // Limpiar archivo temporal después de un tiempo
+      setTimeout(() => {
+        require('fs').unlink(filepath, (cleanupError) => {
+          if (cleanupError) {
+            console.error('Error eliminando archivo temporal:', cleanupError);
+          } else {
+            console.log(`🗑️ Archivo temporal eliminado: ${filename}`);
+          }
+        });
+      }, 60000); // 1 minuto
+    });
+
+  } catch (error) {
+    console.error('Error generando CSV:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+
+
+
 
 
 const server = app.listen(PORT, () => {
@@ -1452,26 +1760,191 @@ const server = app.listen(PORT, () => {
 });
 
 // === INTEGRACIÓN WEBSOCKET CHAT ===
+// REEMPLAZA tu sección WebSocket existente con este código completo:
+
+// === INTEGRACIÓN WEBSOCKET CHAT COMPLETO ===
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ server });
-const clients = new Map();
+const clients = new Map(); // userId -> websocket
+
+// Manejar conexiones WebSocket
 wss.on('connection', (ws, req) => {
-  ws.on('message', (msg) => {
-    let data;
-    try { data = JSON.parse(msg); } catch { return; }
-    if (data.from && !ws.userId) {
-      ws.userId = data.from;
-      clients.set(ws.userId, ws);
-    }
-    if (data.to && data.text) {
-      const dest = clients.get(data.to);
-      if (dest && dest.readyState === WebSocket.OPEN) {
-        dest.send(JSON.stringify(data));
+  console.log('🔗 Nueva conexión WebSocket');
+
+  ws.on('message', async (msg) => {
+    try {
+      const data = JSON.parse(msg);
+      console.log('📨 Mensaje WebSocket recibido:', data);
+
+      // Registro de usuario
+      if (data.type === 'register' && data.userId && !ws.userId) {
+        ws.userId = data.userId;
+        clients.set(data.userId, ws);
+        
+        console.log(`✅ Usuario ${data.userId} registrado en WebSocket`);
+        
+        // Enviar confirmación
+        ws.send(JSON.stringify({
+          type: 'registered',
+          userId: data.userId,
+          timestamp: new Date()
+        }));
+        return;
       }
+
+      // Envío de mensaje
+      if (data.type === 'message' && data.from && data.to && data.text) {
+        const timestamp = new Date();
+        
+        // Obtener información de usuarios para el mensaje
+        const senderUser = await User.findByPk(data.from, {
+          include: [{ model: Role, as: 'roleData' }]
+        });
+        const receiverUser = await User.findByPk(data.to, {
+          include: [{ model: Role, as: 'roleData' }]
+        });
+
+        if (!senderUser || !receiverUser) {
+          ws.send(JSON.stringify({
+            type: 'error',
+            message: 'Usuario no encontrado'
+          }));
+          return;
+        }
+
+        // Crear objeto de mensaje completo
+        const messageData = {
+          content: data.text,
+          timestamp: timestamp,
+          sender: {
+            userId: senderUser.id,
+            username: senderUser.username,
+            role: senderUser.roleData.role_name,
+            name: `${senderUser.name} ${senderUser.surnames}`
+          },
+          receiver: {
+            userId: receiverUser.id,
+            username: receiverUser.username,
+            role: receiverUser.roleData.role_name,
+            name: `${receiverUser.name} ${receiverUser.surnames}`
+          }
+        };
+
+        // Buscar o crear conversación
+        let conversation = await Conversation.findConversationBetween(data.from, data.to);
+        if (!conversation) {
+          conversation = new Conversation({
+            participants: [
+              {
+                userId: messageData.sender.userId,
+                username: messageData.sender.username,
+                role: messageData.sender.role,
+                name: messageData.sender.name
+              },
+              {
+                userId: messageData.receiver.userId,
+                username: messageData.receiver.username,
+                role: messageData.receiver.role,
+                name: messageData.receiver.name
+              }
+            ]
+          });
+          await conversation.save();
+        }
+
+        // Guardar mensaje en MongoDB
+        const newMessage = new Message(messageData);
+        await newMessage.save();
+
+        // Actualizar conversación
+        await conversation.updateLastActivity(messageData);
+
+        // Preparar mensaje para envío WebSocket
+        const wsMessage = {
+          type: 'message',
+          from: data.from,
+          to: data.to,
+          text: data.text,
+          timestamp: timestamp,
+          messageId: newMessage._id,
+          conversationId: conversation._id,
+          senderName: messageData.sender.name,
+          receiverName: messageData.receiver.name
+        };
+
+        // Enviar a destinatario si está conectado
+        const recipientWs = clients.get(data.to);
+        if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
+          recipientWs.send(JSON.stringify(wsMessage));
+          console.log(`📤 Mensaje enviado a usuario ${data.to}`);
+        }
+
+        // Confirmar al remitente
+        ws.send(JSON.stringify({
+          ...wsMessage,
+          type: 'message_sent'
+        }));
+
+        console.log(`💬 Mensaje guardado: ${data.from} -> ${data.to}`);
+      }
+
+      // Solicitud de historial
+      if (data.type === 'get_history' && data.with && ws.userId) {
+        try {
+          const messages = await Message.find({
+            $or: [
+              { 'sender.userId': ws.userId, 'receiver.userId': data.with },
+              { 'sender.userId': data.with, 'receiver.userId': ws.userId }
+            ]
+          }).sort({ timestamp: 1 }).limit(50);
+
+          ws.send(JSON.stringify({
+            type: 'history',
+            messages: messages.map(msg => ({
+              from: msg.sender.userId,
+              to: msg.receiver.userId,
+              text: msg.content,
+              timestamp: msg.timestamp,
+              senderName: msg.sender.name,
+              receiverName: msg.receiver.name
+            })),
+            with: data.with
+          }));
+          
+          console.log(`📜 Historial enviado: ${messages.length} mensajes`);
+        } catch (error) {
+          console.error('Error obteniendo historial:', error);
+          ws.send(JSON.stringify({
+            type: 'error',
+            message: 'Error obteniendo historial'
+          }));
+        }
+      }
+
+    } catch (error) {
+      console.error('Error procesando mensaje WebSocket:', error);
+      ws.send(JSON.stringify({
+        type: 'error',
+        message: 'Error procesando mensaje'
+      }));
     }
   });
+
+  // Manejar desconexión
   ws.on('close', () => {
-    if (ws.userId) clients.delete(ws.userId);
+    if (ws.userId) {
+      clients.delete(ws.userId);
+      console.log(`👋 Usuario ${ws.userId} desconectado del WebSocket`);
+    }
+  });
+
+  // Manejar errores
+  ws.on('error', (error) => {
+    console.error('❌ Error en WebSocket:', error);
+    if (ws.userId) {
+      clients.delete(ws.userId);
+    }
   });
 });
-console.log('WebSocket chat server integrado en el mismo proceso Express.');
+
+console.log('🔄 WebSocket chat server con MongoDB integrado iniciado.');
