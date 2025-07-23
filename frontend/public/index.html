@@ -4,8 +4,25 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    
+    <!-- SIN Content Security Policy para desarrollo -->
+    <!-- <meta http-equiv="Content-Security-Policy" content="..."> -->
+    
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
     <title><%= htmlWebpackPlugin.options.title %></title>
+    
+    <!-- Pre-cargar Google APIs -->
+    <link rel="preconnect" href="https://accounts.google.com">
+    <link rel="preconnect" href="https://www.googleapis.com">
+    <link rel="dns-prefetch" href="https://accounts.google.com">
+    <link rel="dns-prefetch" href="https://apis.google.com">
+    
+    <!-- Cargar Google API Platform Library PRIMERO -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://apis.google.com/js/platform.js"></script>
+    
+    <!-- Meta tag para Google Sign-In -->
+    <meta name="google-signin-client_id" content="293433328847-sggs3n9rc06i95i2g7lqcg45v2qtgpmh.apps.googleusercontent.com">
   </head>
   <body>
     <noscript>

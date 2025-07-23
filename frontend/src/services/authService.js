@@ -34,6 +34,88 @@ const authService = {
     }
   },
 
+  // Login con Google usando código de autorización
+  async loginWithGoogleCode(authCode) {
+    try {
+      console.log('🔄 AuthService: Enviando código a backend')
+      
+      const response = await fetch(`${API_URL}/auth/google/code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          code: authCode
+        })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error del servidor')
+      }
+      
+      const data = await response.json()
+      
+      // Guardar token si el login es exitoso
+      if (data.token) {
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+      }
+      
+      return data
+      
+    } catch (error) {
+      console.error('❌ Error en loginWithGoogleCode:', error)
+      throw error
+    }
+  },
+
+  // Login con Google ID Token (método original)
+  async loginWithGoogle(idToken) {
+    try {
+      console.log('🔄 AuthService: Enviando token a:', `${API_URL}/auth/google`)
+      console.log('🔑 Token enviado (primeros 50 chars):', idToken.substring(0, 50) + '...')
+      
+      const response = await fetch(`${API_URL}/auth/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          idToken: idToken
+        })
+      })
+      
+      console.log('📡 Respuesta HTTP status:', response.status)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ Error del servidor:', errorData)
+        throw new Error(errorData.error || `Error ${response.status}: Error del servidor`)
+      }
+      
+      const data = await response.json()
+      console.log('✅ Datos recibidos del backend:', data)
+      
+      // Verificar que el backend devolvió un token JWT
+      if (!data.token) {
+        throw new Error('El servidor no devolvió un token válido')
+      }
+      
+      // Guardar token y usuario como en el login normal
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('user', JSON.stringify(data.user))
+      
+      console.log('✅ Login con Google completado - Token JWT guardado')
+      
+      return data
+      
+    } catch (error) {
+      console.error('❌ Error en loginWithGoogle:', error)
+      throw error
+    }
+  },
+
   // Registro de usuario
   async register(userData) {
     try {
@@ -161,7 +243,7 @@ const authService = {
   },
 
   // Obtener los datos del usuario del localStorage
- getUser() {
+  getUser() {
     try {
       const userData = localStorage.getItem('user');
       return userData ? JSON.parse(userData) : null;
@@ -171,7 +253,7 @@ const authService = {
     }
   },
 
-   setUser(userData) {
+  setUser(userData) {
     try {
       localStorage.setItem('user', JSON.stringify(userData));
       console.log('✅ Usuario actualizado en localStorage:', userData);
@@ -226,7 +308,7 @@ const authService = {
     }
   },
 
-   updateUserData(updates) {
+  updateUserData(updates) {
     try {
       const currentUser = this.getUser();
       if (currentUser) {
