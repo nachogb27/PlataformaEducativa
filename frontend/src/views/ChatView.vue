@@ -412,13 +412,16 @@ export default {
       if (!this.newMessage.trim() || !this.selectedUser || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
         return
       }
+      const timestamp = new Date();
+      const messageId = `msg_${this.user.id}_${this.selectedUser.userId}_${timestamp.getTime()}_${Math.random().toString(36).substr(2, 9)}`;
 
       const messageData = {
         type: 'message',
         from: this.user.id,
         to: this.selectedUser.userId,
         text: this.newMessage.trim(),
-        timestamp: new Date()
+        timestamp: timestamp,
+        messageId: messageId  // 🆕 Añadir ID único
       }
 
       // Añadir mensaje a la lista local inmediatamente

@@ -3,6 +3,11 @@ const mongoose = require('mongoose');
 
 // Esquema para mensajes individuales
 const MessageSchema = new mongoose.Schema({
+  messageId: {
+    type: String,
+    required: true,
+    unique: true  // Garantiza que no haya duplicados
+  },
   content: {
     type: String,
     required: true,

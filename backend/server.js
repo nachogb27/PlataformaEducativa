@@ -12,13 +12,20 @@ const fs = require('fs').promises;
 const path = require('path');
 const { Message, Conversation } = require('./models/chat.model');
 
+require('dotenv').config();
+
 const app = express();
 const PORT = 3000;
-const JWT_SECRET = 'tu_clave_secreta_jwt';
-const TEACHER_TOKEN = '3rhb23uydb238ry6g2429hrh'; // Token global para profesores
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  console.error('⚠️ JWT_SECRET no definido en .env');
+})();
+const TEACHER_TOKEN = process.env.TEACHER_TOKEN; // Token global para profesores
+
+const { OAuth2Client } = require('google-auth-library');
+
 
 //Configuracion de MongoDB
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/plataforma_educativa';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
@@ -28,6 +35,284 @@ mongoose.connect(MONGODB_URI, {
 }).catch(error => {
   console.error('❌ Error conectando a MongoDB:', error);
 });
+
+
+app.use(cors());
+app.use(express.json()); // Para leer JSON del body
+
+// Reemplaza con tu propio CLIENT_ID
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const client = new OAuth2Client(CLIENT_ID);
+
+// Ruta para iniciar sesión con Google
+// REEMPLAZA tu endpoint /api/auth/google en server.js con este código corregido:
+
+app.post('/api/auth/google', async (req, res) => {
+  const { idToken, token } = req.body; // Aceptar ambos nombres
+  const googleToken = idToken || token; // Usar el que esté disponible
+
+  console.log('🔍 Google login request recibido:', { 
+    hasIdToken: !!idToken, 
+    hasToken: !!token,
+    finalToken: !!googleToken 
+  });
+
+  try {
+    // Verificar que se envió un token
+    if (!googleToken) {
+      console.error('❌ No se recibió token de Google');
+      return res.status(400).json({ error: 'Token de Google requerido' });
+    }
+
+    console.log('🔄 Verificando token con Google...');
+    
+    // Verificar token con Google
+    const ticket = await client.verifyIdToken({
+      idToken: googleToken,
+      audience: CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+    const { sub, email, name } = payload;
+
+    console.log('✅ Token verificado - Usuario Google:', { sub, email, name });
+
+    // Buscar si el usuario ya existe por email
+    let user = await User.findOne({ 
+      where: { email },
+      include: [{
+        model: Role,
+        as: 'roleData'
+      }]
+    });
+
+    if (!user) {
+      console.log('🆕 Usuario no existe, creando nuevo usuario...');
+      
+      // Buscar rol de estudiante por defecto
+      const studentRole = await Role.findOne({ where: { role_name: 'student' } });
+      
+      if (!studentRole) {
+        console.error('❌ Rol de estudiante no encontrado');
+        return res.status(500).json({ error: 'Error de configuración del sistema' });
+      }
+
+      // Crear nuevo usuario
+      user = await User.create({
+        username: email.split('@')[0], // Usar parte antes del @ como username
+        name: name || email.split('@')[0],
+        surnames: '', // Se puede actualizar después
+        email: email,
+        password_token: '', // Vacío para usuarios de Google
+        role: studentRole.id,
+        active: 1, // Activar automáticamente para usuarios de Google
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      // Recargar usuario con rol
+      user = await User.findOne({ 
+        where: { id: user.id },
+        include: [{
+          model: Role,
+          as: 'roleData'
+        }]
+      });
+
+      console.log('✅ Nuevo usuario creado:', user.username);
+    } else {
+      // Verificar si la cuenta está activada
+      if (user.active === 0) {
+        console.log('🔓 Activando cuenta de Google automáticamente...');
+        user.active = 1;
+        await user.save();
+      }
+      
+      console.log('✅ Usuario existente encontrado:', user.username);
+    }
+
+    // Crear sesión
+    await Session.createSession(user.id);
+
+    // Generar JWT (igual que en login normal)
+    const jwtToken = jwt.sign(
+      { userId: user.id, role: user.roleData.role_name },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    console.log('✅ JWT generado para usuario Google:', user.username);
+
+    // Respuesta exitosa (igual formato que login normal)
+    res.json({
+      token: jwtToken, // ← IMPORTANTE: devolver token JWT
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        surnames: user.surnames,
+        email: user.email,
+        role: user.roleData.role_name
+      },
+      message: 'Login con Google exitoso'
+    });
+
+  } catch (error) {
+    console.error('❌ Error verificando token de Google:', error);
+    
+    // Diferenciar tipos de errores
+    if (error.message && error.message.includes('Token')) {
+      res.status(401).json({ error: 'Token de Google no válido o expirado' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor durante login con Google' });
+    }
+  }
+});
+
+// AGREGAR este endpoint DESPUÉS del endpoint /api/auth/google existente en server.js
+
+// Ruta para manejar código de autorización de Google
+app.post('/api/auth/google/code', async (req, res) => {
+  const { code } = req.body;
+
+  console.log('🔍 Google code login request recibido:', { hasCode: !!code });
+
+  try {
+    // Verificar que se envió un código
+    if (!code) {
+      console.error('❌ No se recibió código de Google');
+      return res.status(400).json({ error: 'Código de autorización de Google requerido' });
+    }
+
+    console.log('🔄 Intercambiando código por tokens...');
+    
+    // Intercambiar código por tokens
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        code: code,
+        client_id: CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET, // ⚠️ REEMPLAZAR con tu Client Secret real
+        redirect_uri: 'http://localhost:8080/login',
+        grant_type: 'authorization_code'
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.text();
+      console.error('❌ Error obteniendo tokens:', errorData);
+      return res.status(400).json({ error: 'Error intercambiando código por tokens' });
+    }
+
+    const tokens = await tokenResponse.json();
+    console.log('✅ Tokens obtenidos de Google');
+
+    // Verificar el ID token
+    const ticket = await client.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+    const { sub, email, name } = payload;
+
+    console.log('✅ Token verificado - Usuario Google:', { sub, email, name });
+
+    // Buscar si el usuario ya existe por email
+    let user = await User.findOne({ 
+      where: { email },
+      include: [{
+        model: Role,
+        as: 'roleData'
+      }]
+    });
+
+    if (!user) {
+      console.log('🆕 Usuario no existe, creando nuevo usuario...');
+      
+      // Buscar rol de estudiante por defecto
+      const studentRole = await Role.findOne({ where: { role_name: 'student' } });
+      
+      if (!studentRole) {
+        console.error('❌ Rol de estudiante no encontrado');
+        return res.status(500).json({ error: 'Error de configuración del sistema' });
+      }
+
+      // Crear nuevo usuario
+      user = await User.create({
+        username: email.split('@')[0], // Usar parte antes del @ como username
+        name: name || email.split('@')[0],
+        surnames: '', // Se puede actualizar después
+        email: email,
+        password_token: '', // Vacío para usuarios de Google
+        role: studentRole.id,
+        active: 1, // Activar automáticamente para usuarios de Google
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      // Recargar usuario con rol
+      user = await User.findOne({ 
+        where: { id: user.id },
+        include: [{
+          model: Role,
+          as: 'roleData'
+        }]
+      });
+
+      console.log('✅ Nuevo usuario creado:', user.username);
+    } else {
+      // Verificar si la cuenta está activada
+      if (user.active === 0) {
+        console.log('🔓 Activando cuenta de Google automáticamente...');
+        user.active = 1;
+        await user.save();
+      }
+      
+      console.log('✅ Usuario existente encontrado:', user.username);
+    }
+
+    // Crear sesión
+    await Session.createSession(user.id);
+
+    // Generar JWT (igual que en login normal)
+    const jwtToken = jwt.sign(
+      { userId: user.id, role: user.roleData.role_name },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    console.log('✅ JWT generado para usuario Google:', user.username);
+
+    // Respuesta exitosa (igual formato que login normal)
+    res.json({
+      token: jwtToken, // ← IMPORTANTE: devolver token JWT
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        surnames: user.surnames,
+        email: user.email,
+        role: user.roleData.role_name
+      },
+      message: 'Login con Google exitoso'
+    });
+
+  } catch (error) {
+    console.error('❌ Error verificando código de Google:', error);
+    
+    // Diferenciar tipos de errores
+    if (error.message && error.message.includes('Token')) {
+      res.status(401).json({ error: 'Código de Google no válido o expirado' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor durante login con Google' });
+    }
+  }
+});
+
 
 // 🆕 Configuración de bcrypt
 const SALT_ROUNDS = 12; // Número de rondas de salt (12 es un buen balance seguridad/performance)
@@ -70,8 +355,8 @@ app.use('/uploads', express.static('uploads'));
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'plataforma.educativa.proyecto@gmail.com',
-    pass: 'wyus erdh hgqp vvcs'
+    user: process.env.EMAIL_FROM,
+    pass: process.env.EMAIL_PASS
   }
 });
 
@@ -1574,7 +1859,7 @@ app.post('/api/chat/save-conversation', async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     const { participantId, messages = [] } = req.body;
 
-    // Obtener datos de ambos usuarios
+    // Obtener datos de usuarios
     const currentUser = await User.findByPk(decoded.userId, {
       include: [{ model: Role, as: 'roleData' }]
     });
@@ -1586,10 +1871,8 @@ app.post('/api/chat/save-conversation', async (req, res) => {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
-    // Buscar conversación existente
+    // Buscar o crear conversación
     let conversation = await Conversation.findConversationBetween(decoded.userId, participantId);
-
-    // Si no existe, crear nueva conversación
     if (!conversation) {
       conversation = new Conversation({
         participants: [
@@ -1610,40 +1893,71 @@ app.post('/api/chat/save-conversation', async (req, res) => {
       await conversation.save();
     }
 
-    // Guardar mensajes si se proporcionan
+    // 🔧 DECLARAR VARIABLES AL INICIO
+    let newMessagesCount = 0;
+    let duplicateCount = 0;
+
+    // Solo guardar si hay mensajes
     if (messages.length > 0) {
-      const messagesToSave = messages.map(msg => ({
-        content: msg.text || msg.content,
-        timestamp: new Date(msg.timestamp),
-        sender: {
-          userId: msg.from,
-          username: msg.from === decoded.userId ? currentUser.username : otherUser.username,
-          role: msg.from === decoded.userId ? currentUser.roleData.role_name : otherUser.roleData.role_name,
-          name: msg.from === decoded.userId ? `${currentUser.name} ${currentUser.surnames}` : `${otherUser.name} ${otherUser.surnames}`
-        },
-        receiver: {
-          userId: msg.to,
-          username: msg.to === decoded.userId ? currentUser.username : otherUser.username,
-          role: msg.to === decoded.userId ? currentUser.roleData.role_name : otherUser.roleData.role_name,
-          name: msg.to === decoded.userId ? `${currentUser.name} ${currentUser.surnames}` : `${otherUser.name} ${otherUser.surnames}`
+      for (const msg of messages) {
+        try {
+          // Generar ID único
+          const messageId = msg.messageId || `msg_${msg.from}_${msg.to}_${new Date(msg.timestamp).getTime()}_${Math.random().toString(36).substr(2, 9)}`;
+          
+          const messageData = {
+            messageId: messageId,
+            content: msg.text || msg.content,
+            timestamp: new Date(msg.timestamp),
+            sender: {
+              userId: msg.from,
+              username: msg.from === decoded.userId ? currentUser.username : otherUser.username,
+              role: msg.from === decoded.userId ? currentUser.roleData.role_name : otherUser.roleData.role_name,
+              name: msg.from === decoded.userId ? `${currentUser.name} ${currentUser.surnames}` : `${otherUser.name} ${otherUser.surnames}`
+            },
+            receiver: {
+              userId: msg.to,
+              username: msg.to === decoded.userId ? currentUser.username : otherUser.username,
+              role: msg.to === decoded.userId ? currentUser.roleData.role_name : otherUser.roleData.role_name,
+              name: msg.to === decoded.userId ? `${currentUser.name} ${currentUser.surnames}` : `${otherUser.name} ${otherUser.surnames}`
+            }
+          };
+
+          // Intentar guardar
+          const newMessage = new Message(messageData);
+          await newMessage.save();
+          newMessagesCount++;
+          
+        } catch (error) {
+          if (error.code === 11000) { // Duplicado
+            duplicateCount++;
+          } else {
+            throw error;
+          }
         }
-      }));
-
-      await Message.insertMany(messagesToSave);
-
-      // Actualizar última actividad de la conversación
-      if (messagesToSave.length > 0) {
-        const lastMessage = messagesToSave[messagesToSave.length - 1];
-        await conversation.updateLastActivity(lastMessage);
       }
+
+      // Actualizar conversación si hay mensajes nuevos
+      if (newMessagesCount > 0) {
+        const lastMessage = messages[messages.length - 1];
+        await conversation.updateLastActivity({
+          content: lastMessage.text || lastMessage.content,
+          timestamp: new Date(lastMessage.timestamp),
+          sender: {
+            name: lastMessage.from === decoded.userId ? `${currentUser.name} ${currentUser.surnames}` : `${otherUser.name} ${otherUser.surnames}`
+          }
+        });
+      }
+
+      console.log(`💾 ✅ Guardado completado: ${newMessagesCount} nuevos, ${duplicateCount} duplicados ignorados`);
     }
 
-    console.log(`💾 ✅ Conversación guardada en MongoDB: ${conversation._id}`);
-    
     res.json({ 
-      message: 'Conversación guardada exitosamente',
-      conversationId: conversation._id
+      message: `Conversación actualizada exitosamente`,
+      conversationId: conversation._id,
+      newMessages: newMessagesCount,
+      duplicatesIgnored: duplicateCount
     });
+
   } catch (error) {
     console.error('Error guardando conversación:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -1805,6 +2119,7 @@ wss.on('connection', (ws, req) => {
       // Envío de mensaje (SOLO WebSocket, NO guardar en BD)
       if (data.type === 'message' && data.from && data.to && data.text) {
         const timestamp = new Date();
+        const messageId = `msg_${data.from}_${data.to}_${timestamp.getTime()}_${Math.random().toString(36).substr(2, 9)}`;
         
         // Preparar mensaje para envío WebSocket
         const wsMessage = {
@@ -1812,7 +2127,8 @@ wss.on('connection', (ws, req) => {
           from: data.from,
           to: data.to,
           text: data.text,
-          timestamp: timestamp
+          timestamp: timestamp,
+          messageId: messageId
         };
 
         // Enviar a destinatario si está conectado
