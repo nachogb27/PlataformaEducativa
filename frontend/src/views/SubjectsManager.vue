@@ -202,7 +202,7 @@
     <div v-if="showStudentsModal" class="modal-overlay" @click="closeStudentsModal">
       <div class="modal-content large" @click.stop>
         <div class="modal-header">
-          <h3>Gestionar Estudiantes - {{ selectedSubject?.subject_name }}</h3>
+          <h3>{{ $t('SubjectsManager.manageStudents') }} - {{ selectedSubject?.subject_name }}</h3>
           <button @click="closeStudentsModal" class="close-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/>
@@ -213,9 +213,9 @@
         <div class="students-management">
           <!-- Estudiantes asignados -->
           <div class="assigned-students">
-            <h4>Estudiantes Asignados ({{ assignedStudents.length }})</h4>
+            <h4>{{ $t('SubjectsManager.assignedStudents') }} ({{ assignedStudents.length }})</h4>
             <div v-if="assignedStudents.length === 0" class="empty-list">
-              <p>No hay estudiantes asignados a esta asignatura</p>
+              <p>{{ $t('SubjectsManager.noAssignedStudents') }}</p>
             </div>
             <div v-else class="students-list">
               <div v-for="student in assignedStudents" :key="student.id" class="student-item assigned">
@@ -240,9 +240,9 @@
             </div>
           </div>
           <div class="available-students">
-              <h4>Estudiantes Disponibles ({{ filteredAvailableStudents.length }})</h4>
+              <h4>{{ $t('SubjectsManager.availableStudents') }} ({{ filteredAvailableStudents.length }})</h4>
               <div v-if="filteredAvailableStudents.length === 0" class="empty-list">
-                <p>No hay estudiantes disponibles para asignar</p>
+                <p>{{ $t('SubjectsManager.noAvailableStudents') }}</p>
               </div>
               <div v-else class="students-list">
                 <div v-for="student in filteredAvailableStudents" :key="student.id" class="student-item available">

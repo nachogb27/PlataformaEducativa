@@ -39,5 +39,10 @@
   "surnames": "Apellidos",
   "cancel": "Cancelar",
   "save": "Guardar",
-  "saving": "Guardando..."
+  "saving": "Guardando...",
+  "profile" : "Mi perfil",
+  "chat": "Chat",
+  "logout": "Cerrar sesión"
+
+
 }
