@@ -10,25 +10,26 @@
             </svg>
           </button>
           <div class="chat-title">
-            <h1>Chat</h1>
+            <h1>{{ $t('ChatView.title') }}</h1>
             <p v-if="selectedUser">{{ selectedUser.name }} {{ selectedUser.surnames }}</p>
-            <p v-else>Selecciona un usuario para chatear</p>
+            <p v-else>{{ $t('ChatView.selectUser') }}</p>
           </div>
         </div>
         <div class="header-actions">
+          <LanguageSwitcher />
           <button 
             v-if="currentMessages.length > 0" 
             @click="saveConversation"
             class="save-button"
             :disabled="saving"
-            title="Guardar conversación"
+            :title="$t('ChatView.save')"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 21H5C4.45 21 3.98 20.8 3.59 20.41C3.2 20.02 3 19.55 3 19V5C3 4.45 3.2 3.98 3.59 3.59C3.98 3.2 4.45 3 5 3H16L21 8V19C21 19.55 20.8 20.02 20.41 20.41C20.02 20.8 19.55 21 19 21ZM5 5V19H19V9L15 5H5ZM7 7H13V9H7V7Z" fill="currentColor"/>
             </svg>
-            {{ saving ? 'Guardando...' : 'Guardar Chat' }}
+            {{ saving ? $t('ChatView.saving') : $t('ChatView.save') }}
           </button>
-          <button @click="showHistoryModal = true" class="history-button" title="Ver historial">
+          <button @click="showHistoryModal = true" class="history-button" :title="$t('ChatView.history')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M13 3C8.03 3 4 7.03 4 12H1L4.89 15.89L4.96 16.03L9 12H6C6 8.13 9.13 5 13 5S20 8.13 20 12S16.87 19 13 19C11.07 19 9.32 18.21 8.06 16.94L6.64 18.36C8.27 20 10.5 21 13 21C18.97 21 24 16.97 24 12S18.97 3 13 3ZM12 8V13L16.28 15.54L17 14.33L13.5 12.25V8H12Z" fill="currentColor"/>
             </svg>
@@ -41,20 +42,20 @@
       <!-- Sidebar de usuarios -->
       <div class="users-sidebar">
         <div class="sidebar-header">
-          <h3>{{ user?.role === 'teacher' ? 'Estudiantes' : 'Profesores' }}</h3>
+          <h3>{{ user?.role === 'teacher' ? $t('ChatView.students') : $t('ChatView.teachers') }}</h3>
           <div class="connection-status">
             <div :class="['status-indicator', connectionStatus]"></div>
-            <span class="status-text">{{ connectionText }}</span>
+            <span class="status-text">{{ $t('ChatView.connection') }}: {{ connectionText }}</span>
           </div>
         </div>
         
         <div v-if="loadingUsers" class="loading-users">
           <div class="spinner-small"></div>
-          <p>Cargando usuarios...</p>
+          <p>{{ $t('ChatView.loadingUsers') }}</p>
         </div>
 
         <div v-else-if="availableUsers.length === 0" class="no-users">
-          <p>No hay usuarios disponibles para chat</p>
+          <p>{{ $t('ChatView.noUsers') }}</p>
         </div>
 
         <div v-else class="users-list">
@@ -70,21 +71,21 @@
             </div>
             <div class="user-info">
               <span class="user-name">{{ userItem.name }} {{ userItem.surnames }}</span>
-              <span class="user-role">{{ userItem.role === 'teacher' ? 'Profesor' : 'Estudiante' }}</span>
+              <span class="user-role">{{ userItem.role === 'teacher' ? $t('ChatView.teachers') : $t('ChatView.students') }}</span>
             </div>
-            <div v-if="onlineUsers.has(userItem.userId)" class="online-indicator" title="En línea"></div>
+            <div v-if="onlineUsers.has(userItem.userId)" class="online-indicator" :title="$t('ChatView.connected')"></div>
           </div>
         </div>
       </div>
 
       <!-- Área de chat -->
       <div class="chat-area">
-                <div v-if="!selectedUser" class="no-chat-selected">
+        <div v-if="!selectedUser" class="no-chat-selected">
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M21 15A2 2 0 0 1 19 17H7L4 20V5A2 2 0 0 1 6 3H19A2 2 0 0 1 21 5V15Z" stroke="#cbd5e0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <h3>Selecciona un usuario</h3>
-          <p>Elige un usuario de la lista para comenzar a chatear</p>
+          <h3>{{ $t('ChatView.selectUser') }}</h3>
+          <p>{{ $t('ChatView.selectUserDescription') }}</p>
         </div>
 
         <div v-else class="chat-messages-container">
@@ -92,11 +93,11 @@
           <div class="messages-area" ref="messagesArea">
             <div v-if="loadingMessages" class="loading-messages">
               <div class="spinner"></div>
-              <p>Cargando mensajes...</p>
+              <p>{{ $t('ChatView.loadingMessages') }}</p>
             </div>
 
             <div v-else-if="currentMessages.length === 0" class="no-messages">
-              <p>No hay mensajes. ¡Comienza la conversación!</p>
+              <p>{{ $t('ChatView.noMessages') }}</p>
             </div>
 
             <div v-else class="messages-list">
@@ -122,7 +123,7 @@
               <div class="input-container">
                 <textarea 
                   v-model="newMessage"
-                  placeholder="Escribe tu mensaje..."
+                  :placeholder="$t('ChatView.typeMessage')"
                   class="message-input"
                   rows="1"
                   @keydown="handleKeyDown"
@@ -149,7 +150,7 @@
     <div v-if="showHistoryModal" class="modal-overlay" @click="closeHistoryModal">
       <div class="modal-content history-modal" @click.stop>
         <div class="modal-header">
-          <h3>Historial de Conversaciones</h3>
+          <h3>{{ $t('ChatView.history') }}</h3>
           <button @click="closeHistoryModal" class="close-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -160,11 +161,11 @@
         <div class="modal-body">
           <div v-if="loadingHistory" class="loading">
             <div class="spinner"></div>
-            <p>Cargando historial...</p>
+            <p>{{ $t('ChatView.loadingHistory') }}</p>
           </div>
 
           <div v-else-if="conversationHistory.length === 0" class="no-history">
-            <p>No hay conversaciones guardadas</p>
+            <p>{{ $t('ChatView.noHistory') }}</p>
           </div>
 
           <div v-else class="conversations-list">
@@ -178,7 +179,7 @@
                   <strong>{{ getOtherParticipantName(conversation) }}</strong>
                 </div>
                 <div class="conversation-meta">
-                  <span class="message-count">{{ conversation.messageCount }} mensajes</span>
+                  <span class="message-count">{{ conversation.messageCount }} {{ $t('ChatView.messages') }}</span>
                   <span class="conversation-date">{{ formatDate(conversation.updatedAt) }}</span>
                 </div>
                 <div v-if="conversation.lastMessage" class="last-message">
@@ -192,7 +193,7 @@
                 <button 
                   @click="downloadConversation(conversation._id, getOtherParticipantName(conversation))"
                   class="download-button"
-                  title="Descargar en CSV"
+                  :title="$t('ChatView.downloadCSV')"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15M7 10L12 15L17 10M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -214,9 +215,13 @@
 
 <script>
 import authService from '@/services/authService'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 export default {
   name: 'ChatView',
+  components: {
+    LanguageSwitcher
+  },
   data() {
     return {
       user: null,
@@ -440,7 +445,7 @@ export default {
 
     async saveConversation() {
       if (this.currentMessages.length === 0 || !this.selectedUser) {
-        this.showNotification('No hay mensajes para guardar', 'warning')
+        this.showNotification(this.$t('ChatView.noMessagesToSave'), 'warning')
         return
       }
 
@@ -460,16 +465,16 @@ export default {
 
         if (!response.ok) {
           const error = await response.json()
-          throw new Error(error.error || 'Error guardando conversación')
+          throw new Error(error.error || this.$t('ChatView.errorSaving'))
         }
 
         const result = await response.json()
         console.log('✅ Conversación guardada:', result)
-        this.showNotification('Conversación guardada exitosamente', 'success')
+        this.showNotification(this.$t('ChatView.savedSuccessfully'), 'success')
 
       } catch (error) {
         console.error('❌ Error guardando conversación:', error)
-        this.showNotification('Error guardando conversación: ' + error.message, 'error')
+        this.showNotification(this.$t('ChatView.errorSaving') + ': ' + error.message, 'error')
       } finally {
         this.saving = false
       }

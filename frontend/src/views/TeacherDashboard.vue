@@ -1,28 +1,31 @@
 <template>
   <div class="dashboard-container">
+     <div class="lang-switcher-wrapper">
+      <LanguageSwitcher />
+    </div>
     <div class="dashboard-header">
       <div class="header-content">
         <div class="welcome-section">
-          <h1>Panel de Profesor</h1>
-          <p class="welcome-text">Gestiona tus estudiantes</p>
+          <h1>{{ $t('TeacherDashboard.title') }}</h1>
+          <p class="welcome-text">{{ $t('TeacherDashboard.subtitle') }}</p>
         </div>
         <div class="header-actions">
-          <button @click="goToChat" class="chat-button" title="Chat">
+          <button @click="goToChat" class="chat-button" :title="$t('TeacherDashboard.chat')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
-          <button @click="goToSubjects" class="subjects-button" title="Mis Asignaturas">
+          <button @click="goToSubjects" class="subjects-button" :title="$t('TeacherDashboard.manageSubjects')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L3 7L12 12L21 7L12 2ZM3 17L12 22L21 17M3 12L12 17L21 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
-          <button @click="goToProfile" class="profile-button" title="Mi Perfil">
+          <button @click="goToProfile" class="profile-button" :title="$t('TeacherDashboard.profile')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
             </svg>
           </button>
-          <button @click="logout" class="logout-button" title="Cerrar sesión">
+          <button @click="logout" class="logout-button" :title="$t('TeacherDashboard.logout')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 21H5C4.45 21 3.98 20.8 3.59 20.41C3.2 20.02 3 19.55 3 19V5C3 4.45 3.2 3.98 3.59 3.59C3.98 3.2 4.45 3 5 3H9V5H5V19H9V21ZM16 17L21 12L16 7V10H10V14H16V17Z" fill="currentColor"/>
             </svg>
@@ -33,51 +36,51 @@
     
     <div class="dashboard-content">
       <div class="content-header">
-        <h2>Mis Estudiantes</h2>
+        <h2>{{ $t('TeacherDashboard.studentsTitle') }}</h2>
       </div>
       
       <!-- Debug info expandido -->
       <div v-if="debugMode" class="debug-info">
-        <h4>🔍 Debug Info Detallado:</h4>
+        <h4>🔍 {{ $t('TeacherDashboard.debugTitle') }}</h4>
         <div class="debug-grid">
           <div class="debug-item">
-            <strong>Token:</strong> {{ debugInfo.hasToken ? 'Presente' : 'Ausente' }}
+            <strong>{{ $t('TeacherDashboard.token') }}:</strong> {{ debugInfo.hasToken ? $t('TeacherDashboard.present') : $t('TeacherDashboard.absent') }}
           </div>
           <div class="debug-item">
-            <strong>Usuario:</strong> {{ debugInfo.username || 'No disponible' }}
+            <strong>{{ $t('TeacherDashboard.user') }}:</strong> {{ debugInfo.username || 'N/A' }}
           </div>
           <div class="debug-item">
-            <strong>Rol:</strong> {{ debugInfo.role || 'No disponible' }}
+            <strong>{{ $t('TeacherDashboard.role') }}:</strong> {{ debugInfo.role || 'N/A' }}
           </div>
           <div class="debug-item">
-            <strong>Estado:</strong> {{ debugInfo.loadingState }}
+            <strong>{{ $t('TeacherDashboard.state') }}:</strong> {{ debugInfo.loadingState }}
           </div>
           <div class="debug-item">
-            <strong>URL Backend:</strong> {{ debugInfo.backendUrl }}
+            <strong>{{ $t('TeacherDashboard.backendUrl') }}:</strong> {{ debugInfo.backendUrl }}
           </div>
           <div class="debug-item">
-            <strong>Último error:</strong> {{ debugInfo.lastError || 'Ninguno' }}
+            <strong>{{ $t('TeacherDashboard.lastError') }}:</strong> {{ debugInfo.lastError || $t('TeacherDashboard.none') }}
           </div>
         </div>
         <div class="debug-actions">
-          <button @click="testBackendConnection" class="debug-test-btn">🔗 Probar Conexión</button>
-          <button @click="showDetailedLogs" class="debug-test-btn">📋 Ver Logs</button>
-          <button @click="debugMode = false" class="debug-close">✕ Cerrar</button>
+          <button @click="testBackendConnection" class="debug-test-btn">🔗 {{ $t('TeacherDashboard.testConnection') }}</button>
+          <button @click="showDetailedLogs" class="debug-test-btn">📋 {{ $t('TeacherDashboard.viewLogs') }}</button>
+          <button @click="debugMode = false" class="debug-close">✕ {{ $t('TeacherDashboard.close') }}</button>
         </div>
       </div>
       
       <!-- Filtros de búsqueda -->
       <div v-if="!loading && !error && students.length > 0" class="search-filters">
         <div class="filter-group">
-          <label>Buscar por nombre:</label>
+          <label>{{ $t('TeacherDashboard.searchByName') }}</label>
           <div class="input-with-clear">
             <input 
               type="text" 
               v-model="filters.name"
-              placeholder="Escribe el nombre del estudiante..."
+              :placeholder="$t('TeacherDashboard.namePlaceholder')"
               class="search-input"
             />
-            <button @click="clearNameFilter" class="clear-button" title="Limpiar búsqueda">
+            <button @click="clearNameFilter" class="clear-button" :title="$t('common.clear')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/>
               </svg>
@@ -86,15 +89,15 @@
         </div>
         
         <div class="filter-group">
-          <label>Buscar por email:</label>
+          <label>{{ $t('TeacherDashboard.searchByEmail') }}</label>
           <div class="input-with-clear">
             <input 
               type="text" 
               v-model="filters.email"
-              placeholder="Escribe el email del estudiante..."
+              :placeholder="$t('TeacherDashboard.emailPlaceholder')"
               class="search-input"
             />
-            <button @click="clearEmailFilter" class="clear-button" title="Limpiar búsqueda">
+            <button @click="clearEmailFilter" class="clear-button" :title="$t('common.clear')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/>
               </svg>
@@ -200,7 +203,7 @@
               @click="goToPage(currentPage - 1)"
               :disabled="currentPage === 1"
               class="pagination-button"
-              title="Página anterior"
+              :title="$t('common.previous')"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41Z" fill="currentColor"/>
@@ -222,7 +225,7 @@
               @click="goToPage(currentPage + 1)"
               :disabled="currentPage === totalPages"
               class="pagination-button"
-              title="Página siguiente"
+              :title="$t('common.next')"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M8.59 16.59L10 18L16 12L10 6L8.59 7.41L13.17 12L8.59 16.59Z" fill="currentColor"/>
@@ -237,7 +240,7 @@
     <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>Editar Estudiante</h3>
+          <h3>{{ $t('TeacherDashboard.editStudent') }}</h3>
           <button @click="closeEditModal" class="close-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/>
@@ -247,7 +250,7 @@
         
         <form @submit.prevent="saveStudent" class="edit-form">
           <div class="form-group">
-            <label for="editName">Nombre:</label>
+            <label for="editName">{{ $t('TeacherDashboard.name') }}:</label>
             <input 
               type="text" 
               id="editName" 
@@ -257,7 +260,7 @@
           </div>
           
           <div class="form-group">
-            <label for="editSurnames">Apellidos:</label>
+            <label for="editSurnames">{{ $t('TeacherDashboard.surnames') }}:</label>
             <input 
               type="text" 
               id="editSurnames" 
@@ -272,10 +275,10 @@
           
           <div class="modal-actions">
             <button type="button" @click="closeEditModal" class="cancel-button">
-              Cancelar
+              {{ $t('common.cancel') }}
             </button>
             <button type="submit" class="save-button" :disabled="saving">
-              {{ saving ? 'Guardando...' : 'Guardar' }}
+              {{ saving ? $t('TeacherDashboard.saving') : $t('common.save') }}
             </button>
           </div>
         </form>
@@ -287,9 +290,13 @@
 <script>
 import authService from '@/services/authService'
 import dataService from '@/services/dataService'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 export default {
   name: 'TeacherDashboard',
+  components: {
+    LanguageSwitcher
+  },
   data() {
     return {
       students: [],
@@ -703,6 +710,7 @@ export default {
   gap: 12px;
 }
 
+.chat-button,
 .profile-button,
 .subjects-button,
 .logout-button {
@@ -746,6 +754,7 @@ export default {
   box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
 }
 
+.chat-button:hover::after,
 .profile-button:hover::after,
 .subjects-button:hover::after,
 .logout-button:hover::after {
@@ -1406,8 +1415,16 @@ export default {
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
   }
   .chat-button:hover {
-    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
   }
+
+  .lang-switcher-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+}
 
 @media (max-width: 768px) {
   .search-filters {

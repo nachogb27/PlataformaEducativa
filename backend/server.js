@@ -145,7 +145,7 @@ app.post('/api/auth/google', async (req, res) => {
 
     // Respuesta exitosa (igual formato que login normal)
     res.json({
-      token: jwtToken, // ← IMPORTANTE: devolver token JWT
+      token: jwtToken,
       user: {
         id: user.id,
         username: user.username,
@@ -169,7 +169,6 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// AGREGAR este endpoint DESPUÉS del endpoint /api/auth/google existente en server.js
 
 // Ruta para manejar código de autorización de Google
 app.post('/api/auth/google/code', async (req, res) => {
@@ -195,7 +194,7 @@ app.post('/api/auth/google/code', async (req, res) => {
       body: new URLSearchParams({
         code: code,
         client_id: CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET, // ⚠️ REEMPLAZAR con tu Client Secret real
+        client_secret: process.env.GOOGLE_CLIENT_SECRET, 
         redirect_uri: 'http://localhost:8080/login',
         grant_type: 'authorization_code'
       })
@@ -245,7 +244,7 @@ app.post('/api/auth/google/code', async (req, res) => {
       user = await User.create({
         username: email.split('@')[0], // Usar parte antes del @ como username
         name: name || email.split('@')[0],
-        surnames: '', // Se puede actualizar después
+        surnames: '', 
         email: email,
         password_token: '', // Vacío para usuarios de Google
         role: studentRole.id,
@@ -289,7 +288,7 @@ app.post('/api/auth/google/code', async (req, res) => {
 
     // Respuesta exitosa (igual formato que login normal)
     res.json({
-      token: jwtToken, // ← IMPORTANTE: devolver token JWT
+      token: jwtToken, 
       user: {
         id: user.id,
         username: user.username,

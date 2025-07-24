@@ -1,5 +1,8 @@
 <template>
   <div class="error-container">
+    <div class="lang-switcher-wrapper">
+       <LanguageSwitcher />
+    </div>
     <div class="error-card">
       <div class="error-illustration">
         <div class="error-icon">
@@ -18,32 +21,29 @@
       </div>
       
       <div class="error-content">
-        <h1>¡Algo salió mal!</h1>
+        <h1>{{ $t('ErrorView.title') }}</h1>
         <p class="error-message">
-          {{ errorMessage || 'Se produjo un error inesperado en el servidor.' }}
+          {{ errorMessage || $t('ErrorView.unexpected') }}
         </p>
         <p class="error-description">
-          Nuestro equipo técnico ha sido notificado y está trabajando para solucionarlo.
+          {{ $t('ErrorView.notified') }}
         </p>
         
         <div class="error-details" v-if="showDetails">
           <div class="detail-item">
-            <strong>Código de Error:</strong> 
+            <strong>{{ $t('ErrorView.errorCode') }}:</strong> 
             <span class="error-badge">{{ errorCode || 'UNKNOWN' }}</span>
           </div>
-          
           <div class="detail-item" v-if="errorType">
-            <strong>Tipo:</strong> 
+            <strong>{{ $t('ErrorView.type') }}:</strong> 
             <span>{{ errorType }}</span>
           </div>
-          
           <div class="detail-item" v-if="timestamp">
-            <strong>Momento:</strong> 
+            <strong>{{ $t('ErrorView.moment') }}:</strong> 
             <span>{{ formatTimestamp(timestamp) }}</span>
           </div>
-          
           <div class="detail-item" v-if="$route.path">
-            <strong>Ruta:</strong> 
+            <strong>{{ $t('ErrorView.route') }}:</strong> 
             <code>{{ $route.path }}</code>
           </div>
         </div>
@@ -54,42 +54,40 @@
               <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Ir al Inicio
+            {{ $t('ErrorView.goHome') }}
           </button>
-          
           <button @click="retry" class="retry-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M1 4V10H7M23 20V14H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M20.49 9C19.9828 7.56678 19.1209 6.28825 17.9845 5.27455C16.8482 4.26085 15.4745 3.54684 13.9917 3.19434C12.5089 2.84183 10.9652 2.86144 9.49079 3.25141C8.01639 3.64138 6.66375 4.38991 5.55 5.43L1 10M23 14L18.45 18.57C17.3362 19.6101 15.9836 20.3586 14.5092 20.7486C13.0348 21.1386 11.4911 21.1582 10.0083 20.8057C8.52547 20.4532 7.1518 19.7392 6.01547 18.7255C4.87913 17.7117 4.01719 16.4332 3.51 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Reintentar
+            {{ $t('ErrorView.retry') }}
           </button>
-          
           <button @click="toggleDetails" class="details-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="12" cy="12" r="1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               <circle cx="19" cy="12" r="1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               <circle cx="5" cy="12" r="1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            {{ showDetails ? 'Ocultar' : 'Ver' }} Detalles
+            {{ showDetails ? $t('ErrorView.back') : $t('ErrorView.details') }}
           </button>
         </div>
         
         <div class="help-section">
-          <h3>¿Necesitas ayuda?</h3>
+          <h3>{{ $t('ErrorView.help') }}</h3>
           <div class="help-options">
             <button @click="reportError" class="help-link">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              Reportar Error
+              {{ $t('ErrorView.report') }}
             </button>
             
             <router-link to="/login" class="help-link">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 21H5C4.45 21 3.98 20.8 3.59 20.41C3.2 20.02 3 19.55 3 19V5C3 4.45 3.2 3.98 3.59 3.59C3.98 3.2 4.45 3 5 3H9V5H5V19H9V21ZM16 17L21 12L16 7V10H10V14H16V17Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              Iniciar Sesión
+              {{ $t('ErrorView.login') }}
             </router-link>
           </div>
         </div>
@@ -99,8 +97,14 @@
 </template>
 
 <script>
+
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+
 export default {
   name: 'ErrorView',
+    components: {
+    LanguageSwitcher
+  },
   data() {
     return {
       showDetails: false,
@@ -114,34 +118,34 @@ export default {
     
     errorMessage() {
       const messages = {
-        '400': 'Solicitud incorrecta. Los datos enviados no son válidos.',
-        '401': 'No autorizado. Necesitas iniciar sesión.',
-        '403': 'Acceso prohibido. No tienes permisos para esta acción.',
-        '404': 'Recurso no encontrado.',
-        '422': 'Los datos enviados no se pudieron procesar.',
-        '500': 'Error interno del servidor.',
-        '502': 'El servidor no está disponible temporalmente.',
-        '503': 'Servicio no disponible. Intenta más tarde.'
+        '400': this.$t('ErrorView.400'),
+        '401': this.$t('ErrorView.401'),
+        '403': this.$t('ErrorView.403'),
+        '404': this.$t('ErrorView.404'),
+        '422': this.$t('ErrorView.422'),
+        '500': this.$t('ErrorView.500'),
+        '502': this.$t('ErrorView.502'),
+        '503': this.$t('ErrorView.503')
       };
       
       return this.$route.query.message || 
              messages[this.errorCode] || 
-             'Se produjo un error inesperado.';
+             this.$t('ErrorView.unexpected');
     },
     
     errorType() {
       const types = {
-        '400': 'Error de Cliente',
-        '401': 'Error de Autenticación',
-        '403': 'Error de Autorización',
-        '404': 'Recurso No Encontrado',
-        '422': 'Error de Validación',
-        '500': 'Error de Servidor',
-        '502': 'Error de Gateway',
-        '503': 'Servicio No Disponible'
+        '400': this.$t('ErrorView.type400'),
+        '401': this.$t('ErrorView.type401'),
+        '403': this.$t('ErrorView.type403'),
+        '404': this.$t('ErrorView.type404'),
+        '422': this.$t('ErrorView.type422'),
+        '500': this.$t('ErrorView.type500'),
+        '502': this.$t('ErrorView.type502'),
+        '503': this.$t('ErrorView.type503')
       };
       
-      return types[this.errorCode] || 'Error Desconocido';
+      return types[this.errorCode] || this.$t('ErrorView.typeUnknown');
     }
   },
   methods: {
@@ -427,6 +431,12 @@ export default {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
+  }
+  .lang-switcher-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
   }
 }
 </style>

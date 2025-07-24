@@ -1,0 +1,13 @@
+{
+  "title": "Something went wrong!",
+  "unexpected": "An unexpected error occurred on the server.",
+  "notified": "Our technical team has been notified and is working to fix it.",
+  "errorCode": "Error Code",
+  "type": "Type",
+  "moment": "Time",
+  "route": "Route",
+  "goHome": "Go Home",
+  "retry": "Retry",
+  "details": "Error details",
+  "back": "Back"
+}

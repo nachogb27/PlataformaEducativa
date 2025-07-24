@@ -1,12 +1,15 @@
 <template>
   <div class="register-container">
+    <div class="lang-switcher-wrapper">
+      <LanguageSwitcher />
+    </div>
     <div class="register-card">
-      <h2>Registrarse</h2>
+      <h2>{{ $t('RegisterView.title') }}</h2>
       
       <form @submit.prevent="register" class="register-form">
         <div class="form-row">
           <div class="form-group">
-            <label for="name">Nombre:</label>
+            <label for="name">{{ $t('ProfileView.name') }}:</label>
             <input 
               type="text" 
               id="name" 
@@ -16,7 +19,7 @@
           </div>
           
           <div class="form-group">
-            <label for="surnames">Apellidos:</label>
+            <label for="surnames">{{ $t('ProfileView.surnames') }}:</label>
             <input 
               type="text" 
               id="surnames" 
@@ -27,7 +30,7 @@
         </div>
 
         <div class="form-group">
-          <label for="username">Nombre de usuario:</label>
+          <label for="username">{{ $t('RegisterView.username') }}:</label>
           <input 
             type="text" 
             id="username" 
@@ -37,7 +40,7 @@
         </div>
 
         <div class="form-group">
-          <label for="email">📧 Email:</label>
+          <label for="email">📧 {{ $t('RegisterView.email') }}:</label>
           <input 
             type="email" 
             id="email" 
@@ -45,32 +48,32 @@
             :class="{ 'error': emailError }"
             required
           />
-          <div v-if="emailError" class="field-error">{{ emailError }}</div>
+          <div v-if="emailError" class="field-error">{{ $t(emailError) }}</div>
         </div>
 
         <div class="form-group">
-          <label for="role">👨‍🏫 Rol:</label>
+          <label for="role">👨‍🏫 {{ $t('ProfileView.role') }}:</label>
           <select id="role" v-model="form.role" required>
-            <option value="">Selecciona un rol</option>
-            <option value="student">Estudiante</option>
-            <option value="teacher">Profesor</option>
+            <option value="">{{ $t('RegisterView.selectRole') }}</option>
+            <option value="student">{{ $t('ProfileView.student') }}</option>
+            <option value="teacher">{{ $t('ProfileView.teacher') }}</option>
           </select>
         </div>
 
         <div v-if="form.role === 'teacher'" class="form-group">
-          <label for="teacherToken">Token de profesor:</label>
+          <label for="teacherToken">{{ $t('RegisterView.teacherToken') }}:</label>
           <input 
             type="text" 
             id="teacherToken" 
             v-model="form.teacherToken"
-            placeholder="Ingresa el token de validación"
+            :placeholder="$t('RegisterView.teacherTokenPlaceholder')"
             required
           />
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="password">🔑 Contraseña:</label>
+            <label for="password">🔑 {{ $t('RegisterView.password') }}:</label>
             <input 
               type="password" 
               id="password" 
@@ -80,41 +83,47 @@
           </div>
           
           <div class="form-group">
-            <label for="confirmPassword">🔑 Repetir contraseña:</label>
+            <label for="confirmPassword">🔑 {{ $t('RegisterView.confirmPassword') }}:</label>
             <input 
               type="password" 
               id="confirmPassword" 
               v-model="form.confirmPassword"
               :class="{ 'error': passwordError }"
               required
+              :placeholder="$t('RegisterView.confirmPassword')"
             />
-            <div v-if="passwordError" class="field-error">{{ passwordError }}</div>
+            <div v-if="passwordError" class="field-error">{{ $t(passwordError) }}</div>
           </div>
         </div>
 
         <div v-if="errorMessage" class="error-message">
-          {{ errorMessage }}
+          {{ $t(errorMessage) }}
         </div>
 
         <div v-if="successMessage" class="success-message">
-          {{ successMessage }}
+          {{ $t(successMessage) }}
         </div>
 
         <button type="submit" class="register-button" :disabled="loading">
-          {{ loading ? 'Registrando...' : 'Registrarse' }}
+          {{ loading ? $t('RegisterView.registering') : $t('RegisterView.register') }}
         </button>
       </form>
       
       <router-link to="/login" class="back-button">
-        Volver al Login
+        {{ $t('RegisterView.backToLogin') }}
       </router-link>
     </div>
   </div>
 </template>
 
 <script>
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+
 export default {
   name: 'RegisterView',
+  components: {
+    LanguageSwitcher
+  },
   data() {
     return {
       form: {
@@ -221,6 +230,7 @@ export default {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   padding: 20px 0;
+  position: relative;
 }
 
 .register-card {
@@ -365,6 +375,13 @@ export default {
   box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
   text-decoration: none;
   color: white;
+}
+
+.lang-switcher-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
 }
 
 @media (max-width: 768px) {

@@ -1,28 +1,31 @@
 <template>
   <div class="dashboard-container">
+     <div class="lang-switcher-wrapper">
+      <LanguageSwitcher />
+    </div>
     <div class="dashboard-header">
       <div class="header-content">
         <div class="welcome-section">
-          <h1>Panel de Estudiante</h1>
-          <p class="welcome-text">Profesores de mis asignaturas</p>
+          <h1>{{ $t('StudentDashboard.title') }}</h1>
+          <p class="welcome-text">{{ $t('StudentDashboard.teachers') }}</p>
         </div>
         <div class="header-actions">
-          <button @click="goToSubjects" class="subjects-button" title="Mis Asignaturas">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L3 7L12 12L21 7L12 2ZM3 17L12 22L21 17M3 12L12 17L21 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-          <button @click="goToChat" class="chat-button" title="Chat">
+          <button @click="goToChat" class="chat-button" :title="$t('StudentDashboard.chat')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
-          <button @click="goToProfile" class="profile-button" title="Mi Perfil">
+          <button @click="goToSubjects" class="subjects-button" :title="$t('StudentDashboard.mySubjects')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L3 7L12 12L21 7L12 2ZM3 17L12 22L21 17M3 12L12 17L21 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button @click="goToProfile" class="profile-button" :title="$t('StudentDashboard.profile')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
             </svg>
           </button>
-          <button @click="logout" class="logout-button" title="Cerrar sesión">
+          <button @click="logout" class="logout-button" :title="$t('StudentDashboard.logout')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 21H5C4.45 21 3.98 20.8 3.59 20.41C3.2 20.02 3 19.55 3 19V5C3 4.45 3.2 3.98 3.59 3.59C3.98 3.2 4.45 3 5 3H9V5H5V19H9V21ZM16 17L21 12L16 7V10H10V14H16V17Z" fill="currentColor"/>
             </svg>
@@ -33,46 +36,46 @@
     
     <div class="dashboard-content">
       <div class="content-header">
-        <h2>Mis Profesores</h2>
+        <h2>{{ $t('StudentDashboard.myTeachers') }}</h2>
       </div>
       
       <!-- Debug info -->
       <div v-if="debugMode" class="debug-info">
-        <h4>🔍 Debug Info:</h4>
-        <p>Token: {{ debugInfo.hasToken ? 'Presente' : 'Ausente' }}</p>
-        <p>Usuario: {{ debugInfo.username || 'No disponible' }}</p>
-        <p>Rol: {{ debugInfo.role || 'No disponible' }}</p>
-        <p>Estado: {{ debugInfo.loadingState }}</p>
-        <button @click="debugMode = false" class="debug-close">×</button>
+        <h4>🔍 {{ $t('StudentDashboard.debug') }}</h4>
+        <p>{{ $t('StudentDashboard.token') }}: {{ debugInfo.hasToken ? $t('StudentDashboard.present') : $t('StudentDashboard.absent') }}</p>
+        <p>{{ $t('StudentDashboard.user') }}: {{ debugInfo.username || 'N/A' }}</p>
+        <p>{{ $t('StudentDashboard.role') }}: {{ debugInfo.role || 'N/A' }}</p>
+        <p>{{ $t('StudentDashboard.state') }}: {{ debugInfo.loadingState }}</p>
+        <button @click="debugMode = false" class="debug-close">{{ $t('StudentDashboard.close') }}</button>
       </div>
       
       <div v-if="loading" class="loading">
         <div class="spinner"></div>
-        <p>{{ loadingMessage }}</p>
-        <button @click="debugMode = true" class="debug-button">🔍 Debug</button>
+        <p>{{ $t('StudentDashboard.loading') }}</p>
+        <button @click="debugMode = true" class="debug-button">🔍 {{ $t('StudentDashboard.debug') }}</button>
       </div>
       
       <div v-else-if="error" class="error-message">
-        <h3>❌ Error cargando datos</h3>
+        <h3>❌ {{ $t('StudentDashboard.error') }}</h3>
         <p>{{ error }}</p>
         <div class="error-actions">
-          <button @click="retryLoad" class="retry-button">🔄 Reintentar</button>
-          <button @click="debugMode = true" class="debug-button">🔍 Debug</button>
-          <button @click="goToLogin" class="login-button">🔑 Ir a Login</button>
+          <button @click="retryLoad" class="retry-button">🔄 {{ $t('common.retry') }}</button>
+          <button @click="debugMode = true" class="debug-button">🔍 {{ $t('StudentDashboard.debug') }}</button>
+          <button @click="goToLogin" class="login-button">🔑 {{ $t('common.goToLogin') }}</button>
         </div>
       </div>
       <div v-if="teachers.length === 0 && !loading" class="empty-state">
-        <p>¡Parece que no tienes profesores asignados a tus asignaturas!</p>
-        <p>Contacta con tu administrador o profesor para más información.</p>  
+        <p>{{ $t('StudentDashboard.noTeachers') }}</p>
+        <p>{{ $t('StudentDashboard.noSubjects') }}</p>  
       </div>
       <div v-else class="table-container">
         <table class="teachers-table">
           <thead>
             <tr>
-              <th>Nombre del profesor</th>
-              <th>Apellidos del profesor</th>
-              <th>Email del profesor</th>
-              <th>Nombre de la asignatura</th>
+              <th>{{ $t('ProfileView.name') }}</th>
+              <th>{{ $t('ProfileView.surnames') }}</th>
+              <th>{{ $t('ProfileView.email') }}</th>
+              <th>{{ $t('ProfileView.subjectName') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -103,12 +106,18 @@
   </div>
 </template>
 
+
+
 <script>
 import authService from '@/services/authService'
 import dataService from '@/services/dataService'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 export default {
   name: 'StudentDashboard',
+  components: {
+    LanguageSwitcher
+  },
   data() {
     return {
       teachers: [],
@@ -130,6 +139,9 @@ export default {
     await this.initializeDashboard()
   },
   methods: {
+      changeLang(lang) {
+      this.$i18n.locale = lang;
+    },
     async initializeDashboard() {
       console.log('🔄 Inicializando dashboard del estudiante...')
       
@@ -317,7 +329,8 @@ export default {
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
   }
   .chat-button:hover {
-    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
   }
 
 .subjects-button {
@@ -348,6 +361,7 @@ export default {
   box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
 }
 
+.chat-button:hover::after,
 .profile-button:hover::after,
 .subjects-button:hover::after,
 .logout-button:hover::after {
@@ -604,6 +618,13 @@ export default {
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
+}
+
+.lang-switcher-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
 }
 
 @media (max-width: 768px) {

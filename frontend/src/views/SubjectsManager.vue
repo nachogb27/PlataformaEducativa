@@ -1,5 +1,8 @@
 <template>
   <div class="subjects-container">
+    <div class="lang-switcher-wrapper">
+      <LanguageSwitcher />
+    </div>
     <div class="subjects-header">
       <div class="header-content">
         <div class="title-section">
@@ -9,8 +12,8 @@
             </svg>
           </button>
           <div>
-            <h1>{{ isTeacher ? 'Gestión de Asignaturas' : 'Mis Asignaturas' }}</h1>
-            <p class="subtitle">{{ isTeacher ? 'Gestiona las asignaturas que impartes y asigna estudiantes' : 'Asignaturas en las que estás inscrito' }}</p>
+            <h1>{{ isTeacher ? $t('SubjectsManager.titleTeacher') : $t('SubjectsManager.titleStudent') }}</h1>
+            <p class="subtitle">{{ isTeacher ? $t('SubjectsManager.subtitleTeacher') : $t('SubjectsManager.subtitleStudent') }}</p>
           </div>
         </div>
         
@@ -19,7 +22,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor"/>
             </svg>
-            Nueva Asignatura
+            {{ $t('SubjectsManager.newSubject') }}
           </button>
         </div>
       </div>
@@ -28,27 +31,27 @@
     <div class="subjects-content">
       <!-- Debug info -->
       <div v-if="debugMode" class="debug-info">
-        <h4>🔍 Debug Info:</h4>
-        <p>Token: {{ debugInfo.hasToken ? 'Presente' : 'Ausente' }}</p>
-        <p>Usuario: {{ debugInfo.username || 'No disponible' }}</p>
-        <p>Rol: {{ debugInfo.role || 'No disponible' }}</p>
-        <p>Estado: {{ debugInfo.loadingState }}</p>
-        <p>Asignaturas cargadas: {{ subjects.length }}</p>
-        <button @click="debugMode = false" class="debug-close">×</button>
+        <h4>🔍 {{ $t('SubjectsManager.debug') }}</h4>
+        <p>{{ $t('SubjectsManager.token') }}: {{ debugInfo.hasToken ? $t('SubjectsManager.present') : $t('SubjectsManager.absent') }}</p>
+        <p>{{ $t('SubjectsManager.user') }}: {{ debugInfo.username || 'N/A' }}</p>
+        <p>{{ $t('SubjectsManager.role') }}: {{ debugInfo.role || 'N/A' }}</p>
+        <p>{{ $t('SubjectsManager.state') }}: {{ debugInfo.loadingState }}</p>
+        <p>{{ $t('SubjectsManager.subjectsLoaded') }}: {{ subjects.length }}</p>
+        <button @click="debugMode = false" class="debug-close">{{ $t('SubjectsManager.close') }}</button>
       </div>
 
       <div v-if="loading" class="loading">
         <div class="spinner"></div>
-        <p>{{ loadingMessage }}</p>
-        <button @click="debugMode = true" class="debug-button">🔍 Debug</button>
+        <p>{{ $t('SubjectsManager.loading') }}</p>
+        <button @click="debugMode = true" class="debug-button">🔍 {{ $t('SubjectsManager.debug') }}</button>
       </div>
 
       <div v-else-if="error" class="error-message">
-        <h3>❌ Error cargando datos</h3>
+        <h3>❌ {{ $t('SubjectsManager.error') }}</h3>
         <p>{{ error }}</p>
         <div class="error-actions">
-          <button @click="retryLoad" class="retry-button">🔄 Reintentar</button>
-          <button @click="debugMode = true" class="debug-button">🔍 Debug</button>
+          <button @click="retryLoad" class="retry-button">🔄 {{ $t('SubjectsManager.retry') }}</button>
+          <button @click="debugMode = true" class="debug-button">🔍 {{ $t('SubjectsManager.debug') }}</button>
         </div>
       </div>
 
@@ -58,13 +61,13 @@
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2L3 7L12 12L21 7L12 2ZM3 17L12 22L21 17M3 12L12 17L21 12" stroke="#cbd5e0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <h3>No hay asignaturas creadas</h3>
-          <p>Crea la primera asignatura para empezar</p>
+          <h3>{{ $t('SubjectsManager.noSubjects') }}</h3>
+          <p>{{ $t('SubjectsManager.createFirst') }}</p>
           <button @click="showCreateModal = true" class="create-first-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor"/>
             </svg>
-            Crear Primera Asignatura
+            {{ $t('SubjectsManager.newSubject') }}
           </button>
         </div>
         
@@ -77,7 +80,7 @@
                   v-if="subject.isTeaching" 
                   @click="manageStudents(subject)" 
                   class="action-btn manage-btn" 
-                  title="Gestionar Estudiantes"
+                  :title="$t('SubjectsManager.students')"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" stroke-width="2"/>
@@ -88,7 +91,7 @@
                   v-if="subject.isTeaching" 
                   @click="editSubject(subject)" 
                   class="action-btn edit-btn" 
-                  title="Editar"
+                  :title="$t('common.edit')"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25ZM20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="currentColor"/>
@@ -98,7 +101,7 @@
                   v-if="subject.isTeaching" 
                   @click="deleteSubject(subject)" 
                   class="action-btn delete-btn" 
-                  title="Eliminar"
+                  :title="$t('common.delete')"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z" fill="currentColor"/>
@@ -110,14 +113,14 @@
               <div v-if="subject.isTeaching" class="teaching-info">
                 <div class="student-count">
                   <span class="count">{{ subject.studentCount || 0 }}</span>
-                  <span class="label">estudiantes</span>
+                  <span class="label">{{ $t('SubjectsManager.students') }}</span>
                 </div>
-                <span class="teaching-badge">Impartiendo</span>
+                <span class="teaching-badge">{{ $t('SubjectsManager.teaching') }}</span>
               </div>
               <div v-else class="not-teaching">
-                <p>No estás impartiendo esta asignatura</p>
+                <p>{{ $t('SubjectsManager.notTeaching') }}</p>
                 <button @click="joinAsTeacher(subject)" class="join-button" :disabled="joining">
-                  {{ joining ? 'Uniéndose...' : 'Impartir esta asignatura' }}
+                  {{ joining ? $t('SubjectsManager.joining') : $t('SubjectsManager.join') }}
                 </button>
               </div>
             </div>
@@ -131,8 +134,8 @@
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2L3 7L12 12L21 7L12 2ZM3 17L12 22L21 17M3 12L12 17L21 12" stroke="#cbd5e0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <h3>No estás inscrito en ninguna asignatura</h3>
-          <p>Los profesores te asignarán a las asignaturas correspondientes</p>
+          <h3>{{ $t('SubjectsManager.noSubjects') }}</h3>
+          <p>{{ $t('SubjectsManager.assignedByTeachers') }}</p>
         </div>
         <div v-else class="subjects-grid">
           <div v-for="subject in subjects" :key="subject.id" class="subject-card student-card">
@@ -142,11 +145,11 @@
             </div>
             <div class="card-content">
               <div class="teacher-info">
-                <span class="label">Profesor:</span>
+                <span class="label">{{ $t('SubjectsManager.teacher') }}:</span>
                 <span class="teacher-name">{{ subject.teacher }}</span>
               </div>
               <div class="subject-details">
-                <span class="enrollment-date">Inscrito desde: {{ formatDate(subject.enrollmentDate) }}</span>
+                <span class="enrollment-date">{{ $t('SubjectsManager.enrolledSince') }}: {{ formatDate(subject.enrollmentDate) }}</span>
               </div>
             </div>
           </div>
@@ -158,7 +161,7 @@
     <div v-if="showCreateModal || showEditModal" class="modal-overlay" @click="closeModals">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>{{ showCreateModal ? 'Nueva Asignatura' : 'Editar Asignatura' }}</h3>
+          <h3>{{ showCreateModal ? $t('SubjectsManager.newSubject') : $t('SubjectsManager.editSubject') }}</h3>
           <button @click="closeModals" class="close-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/>
@@ -168,12 +171,12 @@
         
         <form @submit.prevent="showCreateModal ? createSubject() : updateSubject()" class="subject-form">
           <div class="form-group">
-            <label for="subjectName">Nombre de la asignatura:</label>
+            <label for="subjectName">{{ $t('SubjectsManager.subjectName') }}:</label>
             <input 
               type="text" 
               id="subjectName" 
               v-model="subjectForm.name"
-              placeholder="Ej: Matemáticas, Historia, Programación..."
+              :placeholder="$t('SubjectsManager.subjectPlaceholder')"
               required
               maxlength="100"
             />
@@ -185,10 +188,10 @@
           
           <div class="modal-actions">
             <button type="button" @click="closeModals" class="cancel-button">
-              Cancelar
+              {{ $t('common.cancel') }}
             </button>
             <button type="submit" class="save-button" :disabled="saving">
-              {{ saving ? 'Guardando...' : (showCreateModal ? 'Crear' : 'Guardar') }}
+              {{ saving ? $t('SubjectsManager.saving') : (showCreateModal ? $t('SubjectsManager.create') : $t('common.save')) }}
             </button>
           </div>
         </form>
@@ -272,9 +275,13 @@
 <script>
 import dataService from '@/services/dataService'
 import authService from '@/services/authService'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 export default {
   name: 'SubjectsManager',
+    components: {
+    LanguageSwitcher
+  },
   data() {
     return {
       // Estado general
@@ -1286,6 +1293,13 @@ export default {
   padding: 40px 20px;
   color: #718096;
   font-style: italic;
+}
+
+.lang-switcher-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
 }
 
 @media (max-width: 768px) {

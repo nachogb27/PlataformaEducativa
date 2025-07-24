@@ -1,7 +1,10 @@
 <template>
   <div class="reset-password-container">
+      <div class="lang-switcher-wrapper">
+      <LanguageSwitcher />
+    </div>
     <div class="reset-password-card">
-      <h2>Restablecer Contraseña</h2>
+      <h2>{{ $t('ResetPasswordView.title') }}</h2>
       
       <div class="icon">
         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -15,16 +18,16 @@
         </svg>
       </div>
       
-      <p class="description">Crea una nueva contraseña segura</p>
+      <p class="description">{{ $t('ResetPasswordView.description') }}</p>
       
       <form @submit.prevent="resetPassword" class="reset-form">
         <div class="form-group">
-          <label for="newPassword">Nueva contraseña:</label>
+          <label for="newPassword">{{ $t('ResetPasswordView.newPassword') }}:</label>
           <input 
             type="password" 
             id="newPassword" 
             v-model="newPassword"
-            placeholder="Ingresa tu nueva contraseña"
+            :placeholder="$t('ResetPasswordView.newPassword')"
             required
             :class="{ 'error': passwordError }"
           />
@@ -32,12 +35,12 @@
         </div>
         
         <div class="form-group">
-          <label for="confirmPassword">Confirmar contraseña:</label>
+          <label for="confirmPassword">{{ $t('ResetPasswordView.confirmPassword') }}:</label>
           <input 
             type="password" 
             id="confirmPassword" 
             v-model="confirmPassword"
-            placeholder="Confirma tu nueva contraseña"
+            :placeholder="$t('ResetPasswordView.confirmPassword')"
             required
             :class="{ 'error': confirmError }"
           />
@@ -45,12 +48,12 @@
         </div>
         
         <div class="password-requirements">
-          <p>La contraseña debe tener:</p>
+          <p>{{ $t('ResetPasswordView.requirements') }}</p>
           <ul>
-            <li :class="{ 'valid': hasMinLength }">Mínimo 8 caracteres</li>
-            <li :class="{ 'valid': hasUppercase }">Al menos una mayúscula</li>
-            <li :class="{ 'valid': hasLowercase }">Al menos una minúscula</li>
-            <li :class="{ 'valid': hasNumber }">Al menos un número</li>
+            <li :class="{ 'valid': hasMinLength }">{{ $t('ResetPasswordView.minLength') }}</li>
+            <li :class="{ 'valid': hasUppercase }">{{ $t('ResetPasswordView.uppercase') }}</li>
+            <li :class="{ 'valid': hasLowercase }">{{ $t('ResetPasswordView.lowercase') }}</li>
+            <li :class="{ 'valid': hasNumber }">{{ $t('ResetPasswordView.number') }}</li>
           </ul>
         </div>
         
@@ -59,20 +62,26 @@
         </div>
         
         <button type="submit" class="submit-button" :disabled="loading || !isFormValid">
-          {{ loading ? 'Actualizando...' : 'Restablecer contraseña' }}
+          {{ loading ? $t('ResetPasswordView.resetting') : $t('ResetPasswordView.reset') }}
         </button>
       </form>
       
       <router-link to="/login" class="back-button">
-        Volver al Login
+        {{ $t('ResetPasswordView.backToLogin') }}
       </router-link>
     </div>
   </div>
 </template>
 
 <script>
+
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+
 export default {
   name: 'ResetPasswordView',
+    components: {
+    LanguageSwitcher
+  },
   data() {
     return {
       newPassword: '',
@@ -108,7 +117,7 @@ export default {
     // Obtener token de la URL
     this.token = this.$route.query.token;
     if (!this.token) {
-      this.errorMessage = 'Token de restablecimiento no válido';
+      this.errorMessage = this.$t('ResetPasswordView.invalid');
     }
   },
   watch: {
@@ -123,14 +132,14 @@ export default {
     validatePassword() {
       this.passwordError = '';
       if (this.newPassword.length > 0 && !this.isPasswordValid) {
-        this.passwordError = 'La contraseña no cumple los requisitos';
+        this.passwordError = this.$t('ResetPasswordView.invalid');
       }
     },
     
     validateConfirmPassword() {
       this.confirmError = '';
       if (this.confirmPassword.length > 0 && this.newPassword !== this.confirmPassword) {
-        this.confirmError = 'Las contraseñas no coinciden';
+        this.confirmError = this.$t('ResetPasswordView.invalid');
       }
     },
     
@@ -141,12 +150,12 @@ export default {
       
       // Validaciones
       if (!this.isPasswordValid) {
-        this.passwordError = 'La contraseña no cumple los requisitos';
+        this.passwordError = this.$t('ResetPasswordView.invalid');
         return;
       }
       
       if (this.newPassword !== this.confirmPassword) {
-        this.confirmError = 'Las contraseñas no coinciden';
+        this.confirmError = this.$t('ResetPasswordView.invalid');
         return;
       }
       
@@ -376,5 +385,12 @@ export default {
   box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
   text-decoration: none;
   color: white;
+}
+
+.lang-switcher-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
 }
 </style>

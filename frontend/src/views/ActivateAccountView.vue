@@ -1,9 +1,12 @@
 <template>
   <div class="activate-container">
+      <div class="lang-switcher-wrapper">
+        <LanguageSwitcher />
+      </div>
     <div class="activate-card">
       <div v-if="loading" class="loading-section">
         <div class="spinner"></div>
-        <h2>Activando cuenta...</h2>
+        <h2>{{ $t('ActivateAccountView.activating') }}</h2>
       </div>
       
       <div v-else-if="success" class="success-section">
@@ -12,10 +15,10 @@
             <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z" fill="#48bb78"/>
           </svg>
         </div>
-        <h2>¡Cuenta activada!</h2>
-        <p>Tu cuenta ha sido activada exitosamente. Ya puedes iniciar sesión.</p>
+        <h2>{{ $t('ActivateAccountView.success') }}</h2>
+        <p>{{ $t('ActivateAccountView.successDesc') }}</p>
         <router-link to="/login" class="login-button">
-          Ir al Login
+          {{ $t('ActivateAccountView.backToLogin') }}
         </router-link>
       </div>
       
@@ -25,19 +28,27 @@
             <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="#e53e3e"/>
           </svg>
         </div>
-        <h2>Error de activación</h2>
+        <h2>{{ $t('ActivateAccountView.error') }}</h2>
         <p>{{ errorMessage }}</p>
         <router-link to="/login" class="back-button">
-          Volver al Login
+          {{ $t('ActivateAccountView.backToLogin') }}
         </router-link>
       </div>
     </div>
+
+    <!-- Language Switcher -->
+    <LanguageSwitcher />
   </div>
 </template>
 
 <script>
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+
 export default {
   name: 'ActivateAccountView',
+  components: {
+    LanguageSwitcher
+  },
   data() {
     return {
       loading: true,
@@ -49,7 +60,7 @@ export default {
     const token = this.$route.query.token;
     if (!token) {
       this.loading = false;
-      this.errorMessage = 'Token de activación no válido';
+      this.errorMessage = this.$t('ActivateAccountView.invalidToken');
       return;
     }
     
@@ -91,6 +102,7 @@ export default {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  position: relative;
 }
 
 .activate-card {

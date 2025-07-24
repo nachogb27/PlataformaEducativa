@@ -1,5 +1,8 @@
 <template>
   <div class="chat-history-container">
+     <div class="lang-switcher-wrapper">
+      <LanguageSwitcher />
+    </div>
     <div class="history-header">
       <div class="header-content">
         <div class="header-left">
@@ -9,18 +12,18 @@
             </svg>
           </button>
           <div class="title-section">
-            <h1>Historial de Conversaciones</h1>
-            <p>Gestiona y descarga tus chats guardados</p>
+            <h1>{{ $t('ChatHistoryView.title') }}</h1>
+            <p>{{ $t('ChatHistoryView.subtitle') }}</p>
           </div>
         </div>
         <div class="header-stats" v-if="!loading">
           <div class="stat-item">
             <span class="stat-number">{{ conversationHistory.length }}</span>
-            <span class="stat-label">Conversaciones</span>
+            <span class="stat-label">{{ $t('ChatHistoryView.conversations') }}</span>
           </div>
           <div class="stat-item">
             <span class="stat-number">{{ totalMessages }}</span>
-            <span class="stat-label">Mensajes</span>
+            <span class="stat-label">{{ $t('ChatHistoryView.messages') }}</span>
           </div>
         </div>
       </div>
@@ -29,22 +32,22 @@
     <div class="history-content">
       <div v-if="loading" class="loading-state">
         <div class="spinner-large"></div>
-        <h3>Cargando historial de conversaciones...</h3>
-        <p>Esto puede tomar unos momentos</p>
+        <h3>{{ $t('ChatHistoryView.loadingTitle') }}</h3>
+        <p>{{ $t('ChatHistoryView.loadingDesc') }}</p>
       </div>
 
       <div v-else-if="error" class="error-state">
         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#f56565" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <h3>Error cargando el historial</h3>
+        <h3>{{ $t('ChatHistoryView.errorLoading') }}</h3>
         <p>{{ error }}</p>
         <button @click="loadConversationHistory" class="retry-button">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M1 4V10H7M23 20V14H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M3.51 15A9 9 0 0 0 18.36 18.36L23 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          Reintentar
+          {{ $t('ChatHistoryView.retry') }}
         </button>
       </div>
 
@@ -53,13 +56,13 @@
           <path d="M21 15A2 2 0 0 1 19 17H7L4 20V5A2 2 0 0 1 6 3H19A2 2 0 0 1 21 5V15Z" stroke="#cbd5e0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M13 9H7M11 13H7" stroke="#cbd5e0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <h3>No hay conversaciones guardadas</h3>
-        <p>Las conversaciones aparecerán aquí una vez que las guardes desde el chat</p>
+        <h3>{{ $t('ChatHistoryView.noConversations') }}</h3>
+        <p>{{ $t('ChatHistoryView.noConversationsDesc') }}</p>
         <button @click="goToChat" class="start-chat-button">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M21 15A2 2 0 0 1 19 17H7L4 20V5A2 2 0 0 1 6 3H19A2 2 0 0 1 21 5V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          Ir al Chat
+          {{ $t('ChatHistoryView.goToChat') }}
         </button>
       </div>
 
@@ -67,7 +70,7 @@
         <!-- Filtros -->
         <div class="filters-section">
           <div class="filter-group">
-            <label>Buscar conversaciones:</label>
+            <label>{{ $t('ChatHistoryView.searchConversations') }}</label>
             <div class="search-input-container">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
@@ -75,8 +78,8 @@
               </svg>
               <input 
                 type="text" 
+                :placeholder="$t('ChatHistoryView.searchPlaceholder')"
                 v-model="searchQuery"
-                placeholder="Buscar por nombre de usuario..."
                 class="search-input"
               />
               <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search">
@@ -315,9 +318,13 @@
 
 <script>
 import authService from '@/services/authService'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 export default {
   name: 'ChatHistoryView',
+    components: {
+    LanguageSwitcher
+  },
   data() {
     return {
       user: null,
@@ -1272,6 +1279,13 @@ export default {
 
 .notification.info {
   background: linear-gradient(135deg, #4299e1, #3182ce);
+}
+
+.lang-switcher-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
 }
 
 /* Animations */

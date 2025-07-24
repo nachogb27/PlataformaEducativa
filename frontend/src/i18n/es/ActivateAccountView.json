@@ -1,0 +1,9 @@
+{
+  "title": "Activar Cuenta",
+  "activating": "Activando cuenta...",
+  "success": "¡Cuenta activada!",
+  "successDesc": "Tu cuenta ha sido activada exitosamente. Ya puedes iniciar sesión.",
+  "error": "Error de activación",
+  "invalidToken": "Token de activación no válido",
+  "backToLogin": "Volver al Login"
+}

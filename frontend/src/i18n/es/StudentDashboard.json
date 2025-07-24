@@ -1,0 +1,23 @@
+{
+  "title": "Panel de Estudiante",
+  "welcome": "Bienvenido/a",
+  "teachers": "Profesores de mis asignaturas",
+  "mySubjects": "Mis Asignaturas",
+  "myTeachers": "Mis Profesores",
+  "loading": "Cargando...",
+  "error": "Error cargando datos",
+  "logout": "Cerrar sesión",
+  "profile": "Mi Perfil",
+  "chat": "Chat",
+  "subjects": "Asignaturas",
+  "noSubjects": "No tienes asignaturas asignadas",
+  "noTeachers": "No tienes profesores asignados",
+  "debug": "Debug Info:",
+  "token": "Token",
+  "present": "Presente",
+  "absent": "Ausente",
+  "user": "Usuario",
+  "role": "Rol",
+  "state": "Estado",
+  "close": "Cerrar"
+}

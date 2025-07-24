@@ -1,0 +1,13 @@
+{
+  "title": "Registro de Usuario",
+  "username": "Nombre de usuario",
+  "email": "Correo electrónico",
+  "password": "Contraseña",
+  "register": "Registrarse",
+  "backToLogin": "Volver al Login",
+  "selectRole": "Selecciona un rol",
+  "confirmPassword": "Confirmar contraseña",
+  "teacherToken": "Token de profesor",
+  "teacherTokenPlaceholder": "Introduce el token de profesor (proporcionado por el admin)",
+  "registering": "Registrando..."
+}
