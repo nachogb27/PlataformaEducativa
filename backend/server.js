@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
@@ -11,6 +13,9 @@ const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const fs = require('fs').promises;
 const path = require('path');
 const { Message, Conversation } = require('./models/chat.model');
+
+const { uploadToS3, deleteFromS3, checkBucketExists, extractS3Key } = require('./config/aws');
+const { authenticateToken } = require('./middleware/auth');
 
 require('dotenv').config();
 
@@ -43,6 +48,21 @@ app.use(express.json()); // Para leer JSON del body
 // Reemplaza con tu propio CLIENT_ID
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const client = new OAuth2Client(CLIENT_ID);
+
+
+// 🆕 VERIFICAR AWS AL INICIAR (agregar después de las configuraciones)
+(async () => {
+  if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_S3_BUCKET_NAME) {
+    const bucketExists = await checkBucketExists();
+    if (bucketExists) {
+      console.log('🪣 AWS S3 configurado correctamente');
+    } else {
+      console.error('❌ Error: Bucket S3 no accesible');
+    }
+  } else {
+    console.warn('⚠️ AWS S3 no configurado');
+  }
+})();
 
 // Ruta para iniciar sesión con Google
 // REEMPLAZA tu endpoint /api/auth/google en server.js con este código corregido:
@@ -801,69 +821,80 @@ app.get('/api/profile', async (req, res) => {
   }
 });
 
-// ACTUALIZAR AVATAR (sin cambios)
-app.post('/api/profile/avatar', async (req, res) => {
+// ENDPOINT PRINCIPAL PARA SUBIR AVATAR CON S3
+app.post('/api/profile/avatar', authenticateToken, (req, res) => {
+  const upload = uploadToS3.single('avatar');
+  
+  upload(req, res, async (err) => {
+    if (err) {
+      console.error('❌ Error subiendo a S3:', err);
+      return res.status(400).json({ 
+        error: err.message || 'Error al subir la imagen' 
+      });
+    }
+
+    try {
+      const user = await User.findByPk(req.user.id);
+      if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+
+      // Eliminar avatar anterior si existe
+      if (user.avatar) {
+        const oldAvatarKey = extractS3Key(user.avatar);
+        if (oldAvatarKey) {
+          await deleteFromS3(oldAvatarKey);
+          console.log(`🗑️ Avatar anterior eliminado: ${oldAvatarKey}`);
+        }
+      }
+
+      // Guardar nueva URL del avatar
+      const avatarUrl = req.file.location;
+      user.avatar = avatarUrl;
+      await user.save();
+
+      console.log(`✅ Avatar actualizado para usuario ${user.id}: ${avatarUrl}`);
+
+      res.json({ 
+        message: 'Avatar actualizado exitosamente',
+        avatarUrl: avatarUrl
+      });
+
+    } catch (error) {
+      console.error('❌ Error actualizando avatar:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  });
+});
+
+// ENDPOINT PARA ELIMINAR AVATAR
+app.delete('/api/profile/avatar', authenticateToken, async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'Token requerido' });
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const { image, filename } = req.body;
-    
-    if (!image) {
-      return res.status(400).json({ error: 'No se ha enviado ninguna imagen' });
-    }
-
-    // Verificar que es base64 válido
-    const base64Regex = /^data:image\/(jpeg|jpg|png|gif);base64,/;
-    if (!base64Regex.test(image)) {
-      return res.status(400).json({ error: 'Formato de imagen inválido. Use base64.' });
-    }
-
-    const user = await User.findByPk(decoded.userId);
+    const user = await User.findByPk(req.user.id);
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
-    // Extraer el tipo de imagen y los datos base64
-    const matches = image.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
-    const imageType = matches[1];
-    const base64Data = matches[2];
-
-    // Crear directorio si no existe
-    const uploadDir = './uploads/avatars/';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    if (!user.avatar) {
+      return res.status(400).json({ error: 'El usuario no tiene avatar' });
     }
 
-    // Generar nombre único para el archivo
-    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + '.' + imageType;
-    const filePath = path.join(uploadDir, uniqueName);
-
-    // Eliminar avatar anterior si existe
-    if (user.avatar) {
-      const oldAvatarPath = path.join(uploadDir, user.avatar);
-      if (fs.existsSync(oldAvatarPath)) {
-        fs.unlinkSync(oldAvatarPath);
-      }
+    // Eliminar de S3
+    const avatarKey = extractS3Key(user.avatar);
+    if (avatarKey) {
+      await deleteFromS3(avatarKey);
     }
 
-    // Convertir base64 a archivo y guardarlo
-    const buffer = Buffer.from(base64Data, 'base64');
-    fs.writeFileSync(filePath, buffer);
-
-    // Actualizar usuario con nuevo avatar
-    user.avatar = uniqueName;
+    // Eliminar referencia de la base de datos
+    user.avatar = null;
     await user.save();
 
-    const avatarUrl = `http://localhost:${PORT}/uploads/avatars/${uniqueName}`;
-    
-    res.json({ 
-      message: 'Avatar actualizado exitosamente',
-      avatarUrl: avatarUrl
-    });
+    console.log(`🗑️ Avatar eliminado para usuario ${user.id}`);
+
+    res.json({ message: 'Avatar eliminado exitosamente' });
+
   } catch (error) {
-    console.error('Error actualizando avatar:', error);
+    console.error('❌ Error eliminando avatar:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
