@@ -25,5 +25,15 @@
   "close": "Close",
   "createFirst": "Create your first subject to start managing students and content.",
   "teacher": "Teacher",
-  "enrolledSince": "Enrolled since"
+  "enrolledSince": "Enrolled since",
+  "notTeaching": "You are not currently teaching this subject",
+  "join": "Teach subject",
+  "teaching": "Teaching",
+  "editSubject": "Edit Subject",
+  "subjectName": "Subject Name",
+  "manageStudents": "Manage Students",
+  "assignedStudents": "Assigned Students",
+  "noAssignedStudents": "No students assigned to this subject",
+  "availableStudents": "Available Students",
+  "noAvailableStudents": "No students available to assign"
 }

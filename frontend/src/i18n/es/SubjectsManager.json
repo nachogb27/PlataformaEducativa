@@ -25,5 +25,15 @@
   "close": "Cerrar",
   "createFirst": "Crea tu primera asignatura para empezar a gestionar estudiantes y contenidos.",
   "teacher": "Profesor",
-  "enrolledSince": "Inscrito desde"
+  "enrolledSince": "Inscrito desde",
+  "notTeaching": "No estás impartiendo esta asignatura actualmente",
+  "join" : "Impartir asignatura",
+  "teaching": "Impartiendo",
+  "editSubject": "Editar Asignatura",
+  "subjectName": "Nombre de la asignatura",
+  "manageStudents": "Gestionar Estudiantes",
+  "assignedStudents": "Estudiantes Asignados",
+  "noAssignedStudents": "No hay estudiantes asignados a esta asignatura",
+  "availableStudents": "Estudiantes Disponibles",
+  "noAvailableStudents": "No hay estudiantes disponibles para asignar"
 }
