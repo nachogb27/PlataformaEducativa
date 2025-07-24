@@ -6,6 +6,7 @@ import i18n from './i18n';
 
 Vue.config.productionTip = false
 
+console.log('CLIENT ID desde .env.local:', process.env.VUE_APP_GOOGLE_CLIENT_ID);
 // Configurar vue-google-signin-button
 Vue.use(GSignInButton);
 

@@ -20,5 +20,7 @@
   "errorSaving": "Error guardando conversación",
   "savedSuccessfully": "Conversación guardada exitosamente",
   "selectUserDescription": "Elige un usuario de la lista para comenzar a chatear",
-  "messages": "mensajes"
+  "messages": "mensajes",
+  "loadingMessages": "Cargando mensajes...",
+  "noMessages": "No hay mensajes en esta conversación"
 }
