@@ -112,14 +112,16 @@ export default {
       error: '',
       successMessage: '',
       googleSignInParams: {
-        client_id: '293433328847-sggs3n9rc06i95i2g7lqcg45v2qtgpmh.apps.googleusercontent.com',
+        client_id: process.env.VUE_APP_GOOGLE_CLIENT_ID,
         scope: 'profile email',
         longtitle: true,
         theme: 'light'
       }
+
     }
   },
   mounted() {
+    console.log('🚀 GOOGLE CLIENT ID:', process.env.VUE_APP_GOOGLE_CLIENT_ID);
     if (this.$route.query.activated === 'true') {
       this.successMessage = this.$t('LoginView.accountActivated')
     }
@@ -182,8 +184,8 @@ export default {
     // Método de redirección directa a Google (sin popup)
     redirectToGoogle() {
       console.log('🚀 Redirigiendo a Google OAuth...')
-      
-      const clientId = '293433328847-sggs3n9rc06i95i2g7lqcg45v2qtgpmh.apps.googleusercontent.com'
+
+      const clientId = process.env.VUE_APP_GOOGLE_CLIENT_ID
       const redirectUri = encodeURIComponent(window.location.origin + '/login')
       const scope = encodeURIComponent('profile email')
       const responseType = 'code'
@@ -202,6 +204,8 @@ export default {
         `prompt=select_account`
       
       console.log('🔗 URL de Google:', googleAuthUrl)
+      console.log('CLIENT ID usado:', process.env.VUE_APP_GOOGLE_CLIENT_ID)
+
       
       // Redireccionar a Google
       window.location.href = googleAuthUrl
@@ -252,7 +256,7 @@ export default {
           
         } catch (error) {
           console.error('❌ Error procesando código:', error)
-          this.error = this.$t('login.googleProcessingError')
+          this.error = this.$t('LoginView.googleProcessingError')
         } finally {
           this.loading = false
           localStorage.removeItem('google_oauth_state')

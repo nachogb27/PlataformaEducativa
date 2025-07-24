@@ -60,7 +60,7 @@ export default {
     const token = this.$route.query.token;
     if (!token) {
       this.loading = false;
-      this.errorMessage = this.$t('ActivateAccountView.invalidToken');
+      this.errorMessage = 'Token de activación no válido';
       return;
     }
     
