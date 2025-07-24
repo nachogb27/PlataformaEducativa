@@ -1,7 +1,10 @@
 <template>
   <div class="forgot-password-container">
+        <div class="lang-switcher-wrapper">
+          <LanguageSwitcher />
+        </div>
     <div class="forgot-password-card">
-      <h2>Recuperar Contraseña</h2>
+      <h2>{{ $t('ForgotPasswordView.title') }}</h2>
       
       <div v-if="!emailSent" class="form-section">
         <div class="icon">
@@ -16,16 +19,16 @@
           </svg>
         </div>
         
-        <p class="description">Ingresa tu email para recibir instrucciones de recuperación</p>
+        <p class="description">{{ $t('ForgotPasswordView.description') }}</p>
         
         <form @submit.prevent="sendResetEmail" class="forgot-form">
           <div class="form-group">
-            <label for="email">Correo electrónico:</label>
+            <label for="email">{{ $t('ForgotPasswordView.email') }}:</label>
             <input 
               type="email" 
               id="email" 
               v-model="email"
-              placeholder="ejemplo@correo.com"
+              :placeholder="$t('ForgotPasswordView.email')"
               required
               :class="{ 'error': emailError }"
             />
@@ -37,7 +40,7 @@
           </div>
           
           <button type="submit" class="submit-button" :disabled="loading">
-            {{ loading ? 'Enviando...' : 'Enviar instrucciones' }}
+            {{ loading ? $t('ForgotPasswordView.sending') : $t('ForgotPasswordView.send') }}
           </button>
         </form>
       </div>
@@ -48,20 +51,25 @@
             <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z" fill="#48bb78"/>
           </svg>
         </div>
-        <h3>¡Email enviado!</h3>
-        <p>Hemos enviado las instrucciones de recuperación a tu correo electrónico.</p>
+        <h3>{{ $t('ForgotPasswordView.success') }}</h3>
+        <p>{{ $t('ForgotPasswordView.successDesc') }}</p>
       </div>
       
       <router-link to="/login" class="back-button">
-        Volver al Login
+        {{ $t('ForgotPasswordView.backToLogin') }}
       </router-link>
     </div>
   </div>
 </template>
 
 <script>
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+
 export default {
   name: 'ForgotPasswordView',
+  components: {
+    LanguageSwitcher
+  },
   data() {
     return {
       email: '',
@@ -83,7 +91,7 @@ export default {
       
       // Validar email
       if (!this.validateEmail(this.email)) {
-        this.emailError = 'Por favor ingresa un email válido';
+        this.emailError = this.$t('ForgotPasswordView.invalidEmail');
         return;
       }
       
@@ -103,10 +111,10 @@ export default {
         if (response.ok) {
           this.emailSent = true;
         } else {
-          this.errorMessage = data.error || 'Error al enviar el email';
+          this.errorMessage = data.error || this.$t('common.error');
         }
       } catch (error) {
-        this.errorMessage = 'Error de conexión. Inténtalo más tarde.';
+        this.errorMessage = this.$t('common.error');
       } finally {
         this.loading = false;
       }
@@ -123,6 +131,7 @@ export default {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  position: relative;
 }
 
 .forgot-password-card {
@@ -291,4 +300,10 @@ export default {
   color: white;
 }
 
+.lang-switcher-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+}
 </style>

@@ -1,0 +1,23 @@
+{
+  "title": "Student Dashboard",
+  "welcome": "Welcome",
+  "teachers": "Teachers of my subjects",
+  "mySubjects": "My Subjects",
+  "myTeachers": "My Teachers",
+  "loading": "Loading...",
+  "error": "Error loading data",
+  "logout": "Log out",
+  "profile": "My Profile",
+  "chat": "Chat",
+  "subjects": "Subjects",
+  "noSubjects": "You have no assigned subjects",
+  "noTeachers": "You have no assigned teachers",
+  "debug": "Debug Info:",
+  "token": "Token",
+  "present": "Present",
+  "absent": "Absent",
+  "user": "User",
+  "role": "Role",
+  "state": "State",
+  "close": "Close"
+}

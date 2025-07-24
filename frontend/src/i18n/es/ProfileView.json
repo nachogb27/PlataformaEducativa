@@ -1,0 +1,23 @@
+{
+  "title": "Mi Perfil",
+  "loading": "Cargando perfil...",
+  "error": "Error al cargar el perfil",
+  "changeAvatar": "Cambiar foto",
+  "name": "Nombre",
+  "surnames": "Apellidos",
+  "role": "Rol",
+  "teacher": "Profesor",
+  "student": "Estudiante",
+  "email": "Correo electrónico",
+  "username": "Nombre de usuario",
+  "edit": "Editar Información",
+  "cancel": "Cancelar",
+  "save": "Guardar Cambios",
+  "saving": "Guardando...",
+  "info": "Información Personal",
+  "readonlyEmail": "El email no se puede modificar",
+  "readonlyUsername": "El nombre de usuario no se puede modificar",
+  "subjects": "Mis Asignaturas",
+  "subjectName": "Nombre de la asignatura",
+  "studentCount": "estudiantes"
+}

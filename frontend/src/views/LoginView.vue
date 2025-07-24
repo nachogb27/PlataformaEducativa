@@ -1,28 +1,31 @@
 <template>
   <div class="login-container">
+    <div class="lang-switcher-wrapper">
+      <LanguageSwitcher />
+    </div>
     <div class="login-card">
-      <h1>Iniciar Sesión</h1>
+        <h1>{{ $t('LoginView.title') }}</h1>
       
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
-          <label for="username">NOMBRE DE USUARIO:</label>
+          <label for="username">{{ $t('LoginView.usernameLabel') }}</label>
           <input 
             type="text" 
             id="username" 
             v-model="form.username"
-            placeholder="Ingresa tu nombre de usuario"
+            :placeholder="$t('LoginView.usernamePlaceholder')"
             required
             :disabled="loading"
           />
         </div>
         
         <div class="form-group">
-          <label for="password">CONTRASEÑA:</label>
+          <label for="password">{{ $t('LoginView.passwordLabel') }}</label>
           <input 
             type="password" 
             id="password" 
             v-model="form.password"
-            placeholder="Ingresa tu contraseña"
+            :placeholder="$t('LoginView.passwordPlaceholder')"
             required
             :disabled="loading"
           />
@@ -41,14 +44,14 @@
           class="login-button"
           :disabled="loading"
         >
-          {{ loading ? 'INICIANDO SESIÓN...' : 'INICIAR SESIÓN' }}
+          {{ loading ? $t('LoginView.submitting') : $t('LoginView.submit') }}
         </button>
       </form>
 
       <!-- Google Sign-In con método de redirección -->
       <div class="google-signin-container">
         <div class="divider">
-          <span>O continúa con</span>
+          <span>{{ $t('LoginView.orContinueWith') }}</span>
         </div>
         
         <!-- Botón personalizado para redirección -->
@@ -64,7 +67,7 @@
             <path fill="#fbbc05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          Iniciar sesión con Google
+          {{ $t('LoginView.google') }}
         </button>
         
         <!-- Botón original oculto para comparar -->
@@ -80,10 +83,10 @@
 
       <div class="login-links">
         <router-link to="/forgot-password" class="link">
-          Did you forget your password?
+          {{ $t('LoginView.forgotPassword') }}
         </router-link>
         <router-link to="/register" class="link">
-          Sign up
+          {{ $t('LoginView.signUp') }}
         </router-link>
       </div>
     </div>
@@ -92,9 +95,13 @@
 
 <script>
 import authService from '@/services/authService'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 export default {
   name: 'LoginView',
+  components: {
+    LanguageSwitcher
+  },
   data() {
     return {
       form: {
@@ -114,7 +121,7 @@ export default {
   },
   mounted() {
     if (this.$route.query.activated === 'true') {
-      this.successMessage = 'Cuenta activada exitosamente. Ya puedes iniciar sesión.'
+      this.successMessage = this.$t('LoginView.accountActivated')
     }
 
     if (authService.isAuthenticated()) {
@@ -130,12 +137,12 @@ export default {
       this.successMessage = ''
 
       if (!this.form.username.trim()) {
-        this.error = 'El nombre de usuario es requerido'
+        this.error = this.$t('LoginView.usernameRequired')
         return
       }
 
       if (!this.form.password.trim()) {
-        this.error = 'La contraseña es requerida'
+        this.error = this.$t('LoginView.passwordRequired')
         return
       }
 
@@ -150,7 +157,7 @@ export default {
         this.redirectToDashboard(response.user.role)
 
       } catch (error) {
-        this.error = error.message || 'Error al iniciar sesión'
+        this.error = error.message || this.$t('LoginView.loginError')
       } finally {
         this.loading = false
       }
@@ -209,7 +216,7 @@ export default {
       
       if (error) {
         console.error('❌ Error de Google OAuth:', error)
-        this.error = 'Error en la autenticación con Google'
+        this.error = this.$t('LoginView.googleError')
         return
       }
       
@@ -220,7 +227,7 @@ export default {
         const savedState = localStorage.getItem('google_oauth_state')
         if (state !== savedState) {
           console.error('❌ State no válido')
-          this.error = 'Error de seguridad en la autenticación'
+          this.error = this.$t('LoginView.googleSecurityError')
           return
         }
         
@@ -233,9 +240,9 @@ export default {
           const response = await authService.loginWithGoogleCode(code)
           
           console.log('✅ Login exitoso:', response)
-          
-          this.successMessage = 'Iniciando sesión con Google...'
-          
+
+          this.successMessage = this.$t('LoginView.processingGoogle')
+
           // Limpiar URL
           window.history.replaceState({}, document.title, '/login')
           
@@ -245,7 +252,7 @@ export default {
           
         } catch (error) {
           console.error('❌ Error procesando código:', error)
-          this.error = 'Error al procesar la autenticación con Google'
+          this.error = this.$t('login.googleProcessingError')
         } finally {
           this.loading = false
           localStorage.removeItem('google_oauth_state')
@@ -266,15 +273,15 @@ export default {
         
         const response = await authService.loginWithGoogle(idToken)
         console.log('✅ Respuesta del backend:', response)
-        
-        this.successMessage = 'Iniciando sesión con Google...'
+
+        this.successMessage = this.$t('LoginView.processingGoogle')
         setTimeout(() => {
           this.redirectToDashboard(response.user.role)
         }, 1000)
         
       } catch (error) {
         console.error('❌ Error en Google Sign-In:', error)
-        this.error = 'Error al iniciar sesión con Google: ' + (error.message || 'Error desconocido')
+        this.error = this.$t('LoginView.googleSignInError') + ': ' + (error.message || this.$t('LoginView.googleSignInGenericError'))
       } finally {
         this.loading = false
       }
@@ -282,7 +289,7 @@ export default {
 
     handleSignInFailure(error) {
       console.error('❌ Google Sign-In error:', error)
-      this.error = 'Error con el inicio de sesión de Google.'
+      this.error = this.$t('LoginView.googleSignInError')
     }
   }
 }
@@ -297,6 +304,13 @@ export default {
   justify-content: center;
   padding: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.lang-switcher-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
 }
 
 .login-card {

@@ -1,0 +1,13 @@
+{
+  "title": "User Registration",
+  "username": "Username",
+  "email": "Email",
+  "password": "Password",
+  "register": "Register",
+  "backToLogin": "Back to Login",
+  "selectRole": "Select a role",
+  "confirmPassword": "Confirm Password",
+  "teacherToken": "Teacher Token",
+  "teacherTokenPlaceholder": "Enter teacher token (provided by admin)",
+  "registering": "Registering..."
+}

@@ -1,5 +1,8 @@
 <template>
   <div class="not-found-container">
+        <div class="lang-switcher-wrapper">
+          <LanguageSwitcher />
+        </div>
     <div class="not-found-card">
       <div class="error-illustration">
         <div class="error-number">404</div>
@@ -19,12 +22,12 @@
       </div>
       
       <div class="error-content">
-        <h1>¡Oops! Página no encontrada</h1>
+        <h1>¡Oops! {{ $t('NotFoundView.title') }}</h1>
         <p class="error-message">
-          La ruta que estás buscando no existe en nuestra plataforma educativa.
+          {{ $t('NotFoundView.message') }}
         </p>
         <p class="error-description">
-          Es posible que hayas escrito mal la URL o que la página haya sido movida.
+          {{ $t('NotFoundView.description') }}
         </p>
         
         <div class="current-route">
@@ -38,28 +41,28 @@
               <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Ir al Inicio
+            {{ $t('NotFoundView.goHome') }}
           </button>
           
           <button @click="goBack" class="back-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Volver Atrás
+            {{ $t('common.back') }}
           </button>
         </div>
       </div>
       
       <div class="helpful-links">
-        <h3>¿Buscabas alguna de estas páginas?</h3>
+        <h3>{{ $t('NotFoundView.suggestions') }}</h3>
         <div class="links-grid">
           <router-link to="/login" class="help-link">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M10 17L15 12L10 7M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Iniciar Sesión
-          </router-link>
+            {{ $t('NotFoundView.login') }}
+          <!-- removed duplicate closing tag -->
           
           <router-link to="/register" class="help-link">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -67,14 +70,15 @@
               <path d="M8.5 11C10.7091 11 12.5 9.20914 12.5 7C12.5 4.79086 10.7091 3 8.5 3C6.29086 3 4.5 4.79086 4.5 7C4.5 9.20914 6.29086 11 8.5 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M20 8V14M17 11H23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Registrarse
+            {{ $t('NotFoundView.register') }}
           </router-link>
           
           <router-link to="/forgot-password" class="help-link">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Recuperar Contraseña
+            {{ $t('NotFoundView.forgotPassword') }}
+          </router-link>
           </router-link>
         </div>
       </div>
@@ -83,8 +87,13 @@
 </template>
 
 <script>
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+
 export default {
   name: 'NotFoundView',
+  components: {
+    LanguageSwitcher
+  },
   methods: {
     goHome() {
       this.$router.push('/');
@@ -111,6 +120,7 @@ export default {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   padding: 20px;
+  position: relative;
 }
 
 .not-found-card {
@@ -312,5 +322,11 @@ export default {
   .links-grid {
     grid-template-columns: 1fr;
   }
+  .lang-switcher-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+}
 }
 </style>

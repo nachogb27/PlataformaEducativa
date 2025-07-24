@@ -1,9 +1,12 @@
 <template>
   <div class="profile-container">
+     <div class="lang-switcher-wrapper">
+      <LanguageSwitcher />
+    </div>
     <div class="profile-header">
       <div class="header-content">
-        <h1>Mi Perfil</h1>
-        <button @click="goBack" class="back-button" title="Volver">
+        <h1>{{ $t('ProfileView.title') }}</h1>
+        <button @click="goBack" class="back-button" :title="$t('ProfileView.cancel')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M20 11H7.83L13.42 5.41L12 4L4 12L12 20L13.41 18.59L7.83 13H20V11Z" fill="currentColor"/>
           </svg>
@@ -14,11 +17,11 @@
     <div class="profile-content">
       <div v-if="loading" class="loading">
         <div class="spinner"></div>
-        <p>Cargando perfil...</p>
+        <p>{{ $t('ProfileView.loading') }}</p>
       </div>
 
       <div v-else-if="error" class="error-message">
-        {{ error }}
+        {{ $t('ProfileView.error') }}
       </div>
 
       <div v-else class="profile-layout">
@@ -41,7 +44,7 @@
                 <div class="upload-spinner"></div>
               </div>
               
-              <button @click="triggerFileInput" class="change-avatar-button" title="Cambiar foto" :disabled="uploadingAvatar">
+              <button @click="triggerFileInput" class="change-avatar-button" :title="$t('ProfileView.changeAvatar')" :disabled="uploadingAvatar">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1V3H9V1L3 7V9H21ZM21 10H3V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V10Z" fill="currentColor"/>
                 </svg>
@@ -59,19 +62,19 @@
           <div class="user-info">
             <h2>{{ profile.name }} {{ profile.surnames }}</h2>
             <div class="role-badge" :class="profile.role">
-              {{ profile.role === 'teacher' ? 'Profesor' : 'Estudiante' }}
+              {{ profile.role === 'teacher' ? $t('ProfileView.teacher') : $t('ProfileView.student') }}
             </div>
           </div>
         </div>
 
         <!-- Sección de información editable -->
         <div class="info-card">
-          <h3>Información Personal</h3>
+          <h3>{{ $t('ProfileView.info') }}</h3>
           
           <form @submit.prevent="updateProfile" class="profile-form">
             <div class="form-row">
               <div class="form-group">
-                <label>Nombre</label>
+                <label>{{ $t('ProfileView.name') }}</label>
                 <input 
                   type="text" 
                   v-model="editableProfile.name"
@@ -81,7 +84,7 @@
               </div>
               
               <div class="form-group">
-                <label>Apellidos</label>
+                <label>{{ $t('ProfileView.surnames') }}</label>
                 <input 
                   type="text" 
                   v-model="editableProfile.surnames"
@@ -92,25 +95,25 @@
             </div>
 
             <div class="form-group">
-              <label>Email</label>
+              <label>{{ $t('ProfileView.email') }}</label>
               <input 
                 type="email" 
                 :value="profile.email"
                 disabled
                 class="readonly"
               />
-              <small class="help-text">El email no se puede modificar</small>
+              <small class="help-text">{{ $t('ProfileView.readonlyEmail') }}</small>
             </div>
 
             <div class="form-group">
-              <label>Nombre de usuario</label>
+              <label>{{ $t('ProfileView.username') }}</label>
               <input 
                 type="text" 
                 :value="profile.username"
                 disabled
                 class="readonly"
               />
-              <small class="help-text">El nombre de usuario no se puede modificar</small>
+              <small class="help-text">{{ $t('ProfileView.readonlyUsername') }}</small>
             </div>
 
             <div class="form-actions">
@@ -120,7 +123,7 @@
                 @click="startEditing"
                 class="edit-button"
               >
-                Editar Información
+                {{ $t('ProfileView.edit') }}
               </button>
               
               <template v-else>
@@ -129,14 +132,14 @@
                   @click="cancelEditing"
                   class="cancel-button"
                 >
-                  Cancelar
+                  {{ $t('ProfileView.cancel') }}
                 </button>
                 <button 
                   type="submit" 
                   class="save-button"
                   :disabled="saving"
                 >
-                  {{ saving ? 'Guardando...' : 'Guardar Cambios' }}
+                  {{ saving ? $t('ProfileView.saving') : $t('ProfileView.save') }}
                 </button>
               </template>
             </div>
@@ -145,12 +148,12 @@
 
         <!-- Sección de estadísticas para profesores -->
         <div v-if="profile.role === 'teacher' && profile.subjectStats" class="stats-card">
-          <h3>Mis Asignaturas</h3>
+          <h3>{{ $t('ProfileView.subjects') }}</h3>
           
           <div class="stats-grid">
             <div class="stat-item" v-for="stat in profile.subjectStats" :key="stat.subjectName">
               <div class="stat-name">{{ stat.subjectName }}</div>
-              <div class="stat-count">{{ stat.studentCount }} estudiantes</div>
+              <div class="stat-count">{{ stat.studentCount }} {{ $t('ProfileView.studentCount') }}</div>
             </div>
           </div>
         </div>
@@ -161,9 +164,13 @@
 
 <script>
 import authService from '@/services/authService'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 export default {
   name: 'ProfileView',
+  components: {
+    LanguageSwitcher
+  },
   data() {
     return {
       profile: {},
@@ -694,6 +701,13 @@ export default {
   color: #667eea;
   font-weight: 700;
   font-size: 20px;
+}
+
+.lang-switcher-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
 }
 
 @media (max-width: 768px) {

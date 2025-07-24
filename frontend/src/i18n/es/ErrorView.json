@@ -1,0 +1,13 @@
+{
+  "title": "¡Algo salió mal!",
+  "unexpected": "Se produjo un error inesperado en el servidor.",
+  "notified": "Nuestro equipo técnico ha sido notificado y está trabajando para solucionarlo.",
+  "errorCode": "Código de Error",
+  "type": "Tipo",
+  "moment": "Momento",
+  "route": "Ruta",
+  "goHome": "Ir al Inicio",
+  "retry": "Reintentar",
+  "details": "Detalles del error",
+  "back": "Volver"
+}

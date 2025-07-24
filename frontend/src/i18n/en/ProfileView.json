@@ -1,0 +1,23 @@
+{
+  "title": "My Profile",
+  "loading": "Loading profile...",
+  "error": "Error loading profile",
+  "changeAvatar": "Change photo",
+  "name": "Name",
+  "surnames": "Surnames",
+  "role": "Role",
+  "teacher": "Teacher",
+  "student": "Student",
+  "email": "Email",
+  "username": "Username",
+  "edit": "Edit Information",
+  "cancel": "Cancel",
+  "save": "Save Changes",
+  "saving": "Saving...",
+  "info": "Personal Information",
+  "readonlyEmail": "Email cannot be changed",
+  "readonlyUsername": "Username cannot be changed",
+  "subjects": "My Subjects",
+  "subjectName": "Subject Name",
+  "studentCount": "students"
+}
