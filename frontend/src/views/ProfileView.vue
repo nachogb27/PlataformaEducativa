@@ -39,17 +39,41 @@
                 {{ profile.name.charAt(0) }}{{ profile.surnames.charAt(0) }}
               </div>
               
-              <!-- Indicador de carga -->
+              <!-- 🆕 Indicador de carga mejorado -->
               <div v-if="uploadingAvatar" class="upload-overlay">
                 <div class="upload-spinner"></div>
+                <span class="upload-text">Subiendo a S3...</span>
               </div>
               
-              <button @click="triggerFileInput" class="change-avatar-button" :title="$t('ProfileView.changeAvatar')" :disabled="uploadingAvatar">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1V3H9V1L3 7V9H21ZM21 10H3V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V10Z" fill="currentColor"/>
-                </svg>
-              </button>
+              <!-- 🆕 Botones de acción mejorados -->
+              <div class="avatar-actions">
+                <button 
+                  @click="triggerFileInput" 
+                  class="change-avatar-button" 
+                  :title="$t('ProfileView.changeAvatar')" 
+                  :disabled="uploadingAvatar"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1V3H9V1L3 7V9H21ZM21 10H3V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V10Z" fill="currentColor"/>
+                  </svg>
+                </button>
+                
+                <!-- 🆕 Botón para eliminar avatar -->
+                <button 
+                  v-if="profile.avatar" 
+                  @click="deleteAvatar" 
+                  class="delete-avatar-button" 
+                  title="Eliminar foto" 
+                  :disabled="uploadingAvatar"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z" fill="currentColor"/>
+                  </svg>
+                </button>
+              </div>
             </div>
+            
+            <!-- Input file oculto -->
             <input 
               ref="fileInput"
               type="file" 
@@ -57,6 +81,16 @@
               @change="handleFileChange"
               style="display: none"
             />
+            
+            <!-- 🆕 Información sobre S3 -->
+            <div v-if="profile.avatar" class="avatar-info">
+              <small class="avatar-source">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="#f39c12"/>
+                </svg>
+                Almacenado en AWS S3
+              </small>
+            </div>
           </div>
 
           <div class="user-info">
@@ -282,20 +316,18 @@ export default {
       this.uploadingAvatar = true
 
       try {
-        // Convertir archivo a base64
-        const base64 = await this.fileToBase64(file)
+        // 🆕 SUBIR USANDO FORMDATA EN LUGAR DE BASE64
+        const formData = new FormData()
+        formData.append('avatar', file)
 
         const token = authService.getToken()
         const response = await fetch('http://localhost:3000/api/profile/avatar', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
+            // ❌ NO incluir Content-Type para FormData
           },
-          body: JSON.stringify({
-            image: base64,
-            filename: file.name
-          })
+          body: formData
         })
 
         if (!response.ok) {
@@ -304,14 +336,71 @@ export default {
         }
 
         const result = await response.json()
+        
+        // Actualizar avatar en la UI
         this.profile.avatar = result.avatarUrl
         
+        // Actualizar también en authService
+        const currentUser = authService.getUser()
+        if (currentUser) {
+          currentUser.avatar = result.avatarUrl
+          authService.setUser(currentUser)
+        }
+
+        console.log('✅ Avatar subido exitosamente a S3:', result.avatarUrl)
+        alert('¡Avatar actualizado exitosamente!')
+        
       } catch (error) {
+        console.error('❌ Error subiendo imagen:', error)
         alert('Error al subir imagen: ' + error.message)
       } finally {
         this.uploadingAvatar = false
         // Limpiar input
         this.$refs.fileInput.value = ''
+      }
+    },
+
+    // 🆕 AGREGAR NUEVO MÉTODO PARA ELIMINAR AVATAR
+    async deleteAvatar() {
+      if (!this.profile.avatar) {
+        alert('No hay avatar para eliminar')
+        return
+      }
+
+      if (!confirm('¿Estás seguro de que deseas eliminar tu foto de perfil?')) {
+        return
+      }
+
+      try {
+        const token = authService.getToken()
+        const response = await fetch('http://localhost:3000/api/profile/avatar', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Error al eliminar el avatar')
+        }
+
+        // Limpiar avatar en la UI
+        this.profile.avatar = null
+        
+        // Actualizar también en authService
+        const currentUser = authService.getUser()
+        if (currentUser) {
+          currentUser.avatar = null
+          authService.setUser(currentUser)
+        }
+
+        alert('Avatar eliminado exitosamente')
+        
+      } catch (error) {
+        console.error('❌ Error eliminando avatar:', error)
+        alert('Error al eliminar avatar: ' + error.message)
       }
     },
 
@@ -708,6 +797,100 @@ export default {
   top: 20px;
   right: 20px;
   z-index: 100;
+}
+
+/* 🆕 AGREGAR estos estilos al final del <style scoped> en ProfileView.vue */
+
+.avatar-actions {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  display: flex;
+  gap: 8px;
+}
+
+.change-avatar-button,
+.delete-avatar-button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.change-avatar-button {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.delete-avatar-button {
+  background: linear-gradient(135deg, #f56565, #e53e3e);
+  color: white;
+}
+
+.change-avatar-button:hover,
+.delete-avatar-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.change-avatar-button:disabled,
+.delete-avatar-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.upload-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #ffffff40;
+  border-top: 3px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.upload-text {
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.avatar-info {
+  text-align: center;
+  margin-top: 12px;
+}
+
+.avatar-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #718096;
+  font-size: 11px;
+  background: rgba(243, 156, 18, 0.1);
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(243, 156, 18, 0.2);
 }
 
 @media (max-width: 768px) {

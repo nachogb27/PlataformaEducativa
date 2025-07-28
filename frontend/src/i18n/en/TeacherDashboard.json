@@ -1,4 +1,5 @@
 {
+  "deleteStudent": "Delete student",
   "title": "Teacher Dashboard",
   "subtitle": "Manage your students",
   "studentsTitle": "My Students",
@@ -42,5 +43,6 @@
   "saving": "Saving...",
   "profile" : "My Profile",
   "chat": "Chat",
-  "logout": "Log Out"
+  "logout": "Log Out",
+  "paginationInfo": "Showing {start} - {end} of {total} students"
 }

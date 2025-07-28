@@ -298,6 +298,7 @@ export default {
   margin: 0;
 }
 
+
 .header-actions {
   display: flex;
   gap: 12px;
