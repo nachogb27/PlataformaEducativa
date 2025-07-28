@@ -17,8 +17,6 @@ const { Message, Conversation } = require('./models/chat.model');
 const { uploadToS3, deleteFromS3, checkBucketExists, extractS3Key } = require('./config/aws');
 const { authenticateToken } = require('./middleware/auth');
 
-require('dotenv').config();
-
 const app = express();
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || (() => {
@@ -49,6 +47,24 @@ app.use(express.json()); // Para leer JSON del body
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const client = new OAuth2Client(CLIENT_ID);
 
+// FUNCIÓN HELPER PARA CONSTRUIR URL DE AVATAR
+const buildAvatarUrl = (avatarPath) => {
+  if (!avatarPath) return null;
+  
+  // Si ya es una URL completa (S3), devolverla tal como está
+  if (avatarPath.startsWith('http')) {
+    return avatarPath;
+  }
+  
+  // Si es un path local, construir URL completa
+  return `http://localhost:${PORT}/uploads/avatars/${avatarPath}`;
+};
+
+// Función para validar email
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
 
 // 🆕 VERIFICAR AWS AL INICIAR (agregar después de las configuraciones)
 (async () => {
@@ -967,7 +983,7 @@ app.get('/api/student/teachers', async (req, res) => {
       name: relation.teacher.name,
       surnames: relation.teacher.surnames,
       email: relation.teacher.email,
-      avatar: relation.teacher.avatar ? `http://localhost:${PORT}/uploads/avatars/${relation.teacher.avatar}` : null,
+      avatar: buildAvatarUrl(relation.teacher.avatar), // 🔧 Usar helper
       subjectName: relation.subject.subject_name
     }));
 
@@ -977,6 +993,7 @@ app.get('/api/student/teachers', async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+
 
 // OBTENER ASIGNATURAS DEL ESTUDIANTE (sin cambios)
 app.get('/api/student/subjects', async (req, res) => {
@@ -1016,7 +1033,7 @@ app.get('/api/student/subjects', async (req, res) => {
   }
 });
 
-// OBTENER ESTUDIANTES DEL PROFESOR (sin cambios)
+// OBTENER ESTUDIANTES DEL PROFESOR (CORREGIDO)
 app.get('/api/teacher/students', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -1039,15 +1056,31 @@ app.get('/api/teacher/students', async (req, res) => {
       ]
     });
 
-    const students = relations.map(relation => ({
-      id: relation.student.id,
-      name: relation.student.name,
-      lastName: relation.student.surnames,
-      email: relation.student.email,
-      avatar: relation.student.avatar ? `http://localhost:${PORT}/uploads/avatars/${relation.student.avatar}` : null,
-      subject: relation.subject.subject_name,
-      grade: (Math.random() * 3 + 7).toFixed(1) // Temporal
-    }));
+    const students = relations.map(relation => {
+      // 🔧 DEBUGGING: Log para ver qué avatar tiene cada estudiante
+      console.log(`👤 Estudiante ${relation.student.name}: avatar = "${relation.student.avatar}"`);
+      
+      return {
+        id: relation.student.id,
+        name: relation.student.name,
+        lastName: relation.student.surnames,
+        email: relation.student.email,
+        // 🔧 CONSTRUCCIÓN MEJORADA DE LA URL DEL AVATAR
+        avatar: relation.student.avatar 
+          ? (relation.student.avatar.startsWith('http') 
+              ? relation.student.avatar  // Ya es URL completa de S3
+              : `http://localhost:${PORT}/uploads/avatars/${relation.student.avatar}`) // Es path local
+          : null,
+        subject: relation.subject.subject_name,
+        grade: (Math.random() * 3 + 7).toFixed(1) // Temporal
+      };
+    });
+
+    // 🔧 DEBUGGING: Log de la respuesta completa
+    console.log('📤 Enviando estudiantes al profesor:', students.map(s => ({
+      name: s.name,
+      avatar: s.avatar
+    })));
 
     res.json(students);
   } catch (error) {
@@ -1055,7 +1088,6 @@ app.get('/api/teacher/students', async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
-
 // ============= ENDPOINTS DE ASIGNATURAS MEJORADOS =============
 
 // ============= ENDPOINTS FALTANTES EN server.js =============
@@ -1816,7 +1848,7 @@ app.get('/api/chat/available-users', async (req, res) => {
         email: relation.teacher.email,
         username: relation.teacher.username,
         role: 'teacher',
-        avatar: relation.teacher.avatar ? `http://localhost:${PORT}/uploads/avatars/${relation.teacher.avatar}` : null
+        avatar: buildAvatarUrl(relation.teacher.avatar) // 🔧 Usar helper
       }));
 
     } else if (user.roleData.role_name === 'teacher') {
@@ -1824,7 +1856,7 @@ app.get('/api/chat/available-users', async (req, res) => {
       const relations = await StudentsTeachersRelation.findAll({
         where: { 
           id_teacher: decoded.userId,
-          id_student: { [require('sequelize').Op.ne]: decoded.userId } // Excluir relaciones dummy
+          id_student: { [require('sequelize').Op.ne]: decoded.userId }
         },
         include: [{
           model: User,
@@ -1843,7 +1875,7 @@ app.get('/api/chat/available-users', async (req, res) => {
           email: relation.student.email,
           username: relation.student.username,
           role: 'student',
-          avatar: relation.student.avatar ? `http://localhost:${PORT}/uploads/avatars/${relation.student.avatar}` : null
+          avatar: buildAvatarUrl(relation.student.avatar) // 🔧 Usar helper
         });
       });
 

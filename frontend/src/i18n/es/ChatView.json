@@ -22,5 +22,6 @@
   "selectUserDescription": "Elige un usuario de la lista para comenzar a chatear",
   "messages": "mensajes",
   "loadingMessages": "Cargando mensajes...",
-  "noMessages": "No hay mensajes en esta conversación"
+  "noMessages": "No hay mensajes en esta conversación",
+  "typeMessage": "Escribe un mensaje..."
 }
