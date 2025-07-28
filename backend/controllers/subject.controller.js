@@ -11,51 +11,58 @@ class SubjectController {
     }
   }
 
-  async getSubjectsWithTeachers(req, res) {
+  async getTeacherSubjects(req, res) {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
-      const result = await subjectService.getSubjectsWithTeachers(token);
-      res.json(result);
+      const subjects = await subjectService.getTeacherSubjects(req.user.id);
+      res.json(subjects);
     } catch (error) {
-      console.error('Error obteniendo asignaturas con profesores:', error);
+      console.error('Error obteniendo asignaturas del profesor:', error);
       res.status(500).json({ error: error.message });
     }
   }
 
   async createSubject(req, res) {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
       const { name } = req.body;
-      const result = await subjectService.createSubject(token, name);
+      const result = await subjectService.createSubject(req.user.id, name);
       res.json(result);
     } catch (error) {
       console.error('Error creando asignatura:', error);
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   }
 
   async updateSubject(req, res) {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
-      const subjectId = req.params.id;
+      const { id } = req.params;
       const { name } = req.body;
-      const result = await subjectService.updateSubject(token, subjectId, name);
+      const result = await subjectService.updateSubject(req.user.id, id, name);
       res.json(result);
     } catch (error) {
       console.error('Error actualizando asignatura:', error);
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   }
 
   async deleteSubject(req, res) {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
-      const subjectId = req.params.id;
-      const result = await subjectService.deleteSubject(token, subjectId);
+      const { id } = req.params;
+      const result = await subjectService.deleteSubject(req.user.id, id);
       res.json(result);
     } catch (error) {
       console.error('Error eliminando asignatura:', error);
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  async joinAsTeacher(req, res) {
+    try {
+      const { subjectId } = req.body;
+      const result = await subjectService.joinAsTeacher(req.user.id, subjectId);
+      res.json(result);
+    } catch (error) {
+      console.error('Error uniéndose como profesor:', error);
+      res.status(400).json({ error: error.message });
     }
   }
 }

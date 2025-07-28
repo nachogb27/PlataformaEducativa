@@ -1,13 +1,40 @@
 const relationRepository = require('../repositories/relation.repository');
 
 class StudentService {
-  async getSubjects(token) {
-    // Aquí deberías verificar el token y extraer el userId
-    return await relationRepository.findSubjectsByTeacher(token);
+  async getTeachers(studentId) {
+    const relations = await relationRepository.findTeachersByStudent(studentId);
+    
+    return relations.map(relation => ({
+      teacherId: relation.teacher.id,
+      subjectId: relation.subject.id,
+      name: relation.teacher.name,
+      surnames: relation.teacher.surnames,
+      email: relation.teacher.email,
+      avatar: this.buildAvatarUrl(relation.teacher.avatar),
+      subjectName: relation.subject.subject_name
+    }));
   }
 
-  async getTeachers(token) {
-    return await relationRepository.findTeachersByStudent(token);
+  async getSubjects(studentId) {
+    const relations = await relationRepository.findTeachersByStudent(studentId);
+    
+    return relations.map(relation => ({
+      id: relation.subject.id,
+      name: relation.subject.subject_name,
+      teacher: `${relation.teacher.name} ${relation.teacher.surnames}`,
+      credits: Math.floor(Math.random() * 6) + 3, // Temporal
+      status: 'Cursando'
+    }));
+  }
+
+  buildAvatarUrl(avatarPath) {
+    if (!avatarPath) return null;
+    
+    if (avatarPath.startsWith('http')) {
+      return avatarPath;
+    }
+    
+    return `http://localhost:3000/uploads/avatars/${avatarPath}`;
   }
 }
 
