@@ -1,4 +1,4 @@
-// config/aws.js
+// config/aws.js - Con metadata corregida
 const AWS = require('aws-sdk');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
@@ -20,7 +20,7 @@ const uploadToS3 = multer({
     metadata: function (req, file, cb) {
       cb(null, {
         fieldName: file.fieldname,
-        uploadedBy: req.user ? req.user.id : 'anonymous',
+        uploadedBy: req.user ? req.user.id.toString() : 'anonymous', // ✅ Convertir a string
         uploadDate: new Date().toISOString()
       });
     },
@@ -95,10 +95,27 @@ const checkBucketExists = async () => {
   }
 };
 
+// Función para generar URLs firmadas (signed URLs) para acceso temporal
+const getSignedUrl = (fileKey, expiresIn = 3600) => {
+  try {
+    const params = {
+      Bucket: process.env.AWS_S3_BUCKET_NAME,
+      Key: fileKey,
+      Expires: expiresIn // segundos
+    };
+    
+    return s3.getSignedUrl('getObject', params);
+  } catch (error) {
+    console.error('Error generando URL firmada:', error);
+    return null;
+  }
+};
+
 module.exports = {
   s3,
   uploadToS3,
   deleteFromS3,
   extractS3Key,
-  checkBucketExists
+  checkBucketExists,
+  getSignedUrl
 };
