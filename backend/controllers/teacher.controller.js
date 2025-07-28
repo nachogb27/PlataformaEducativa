@@ -3,8 +3,7 @@ const teacherService = require('../services/teacher.service');
 class TeacherController {
   async getStudents(req, res) {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
-      const students = await teacherService.getStudents(token);
+      const students = await teacherService.getStudents(req.user.id);
       res.json(students);
     } catch (error) {
       console.error('Error obteniendo estudiantes:', error);
@@ -12,59 +11,22 @@ class TeacherController {
     }
   }
 
-  async updateStudent(req, res) {
+  async getAssignedStudents(req, res) {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
-      const studentId = req.params.id;
-      const result = await teacherService.updateStudent(token, studentId, req.body);
-      res.json(result);
+      const { subjectId } = req.params;
+      const students = await teacherService.getAssignedStudents(req.user.id, subjectId);
+      res.json(students);
     } catch (error) {
-      console.error('Error actualizando estudiante:', error);
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async deleteStudent(req, res) {
-    try {
-      const token = req.headers.authorization?.split(' ')[1];
-      const studentId = req.params.id;
-      const result = await teacherService.deleteStudent(token, studentId);
-      res.json(result);
-    } catch (error) {
-      console.error('Error eliminando estudiante:', error);
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async getTeacherSubjects(req, res) {
-    try {
-      const token = req.headers.authorization?.split(' ')[1];
-      const result = await teacherService.getSubjects(token);
-      res.json(result);
-    } catch (error) {
-      console.error('Error obteniendo asignaturas del profesor:', error);
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async getSubjectStudents(req, res) {
-    try {
-      const token = req.headers.authorization?.split(' ')[1];
-      const subjectId = req.params.subjectId;
-      const result = await teacherService.getSubjectStudents(token, subjectId);
-      res.json(result);
-    } catch (error) {
-      console.error('Error obteniendo estudiantes de asignatura:', error);
+      console.error('Error obteniendo estudiantes asignados:', error);
       res.status(500).json({ error: error.message });
     }
   }
 
   async getAvailableStudents(req, res) {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
-      const subjectId = req.params.subjectId;
-      const result = await teacherService.getAvailableStudents(token, subjectId);
-      res.json(result);
+      const { subjectId } = req.params;
+      const students = await teacherService.getAvailableStudents(req.user.id, subjectId);
+      res.json(students);
     } catch (error) {
       console.error('Error obteniendo estudiantes disponibles:', error);
       res.status(500).json({ error: error.message });
@@ -73,48 +35,45 @@ class TeacherController {
 
   async assignStudent(req, res) {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
       const { studentId, subjectId } = req.body;
-      const result = await teacherService.assignStudent(token, studentId, subjectId);
+      const result = await teacherService.assignStudentToSubject(req.user.id, studentId, subjectId);
       res.json(result);
     } catch (error) {
       console.error('Error asignando estudiante:', error);
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   }
 
   async removeStudent(req, res) {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
       const { studentId, subjectId } = req.body;
-      const result = await teacherService.removeStudent(token, studentId, subjectId);
+      const result = await teacherService.removeStudentFromSubject(req.user.id, studentId, subjectId);
       res.json(result);
     } catch (error) {
-      console.error('Error desasignando estudiante:', error);
-      res.status(500).json({ error: error.message });
+      console.error('Error removiendo estudiante:', error);
+      res.status(400).json({ error: error.message });
     }
   }
 
-  async joinSubject(req, res) {
+  async editStudent(req, res) {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
-      const { subjectId } = req.body;
-      const result = await teacherService.joinSubject(token, subjectId);
+      const { id } = req.params;
+      const result = await teacherService.editStudent(req.user.id, id, req.body);
       res.json(result);
     } catch (error) {
-      console.error('Error uniéndose a asignatura:', error);
-      res.status(500).json({ error: error.message });
+      console.error('Error editando estudiante:', error);
+      res.status(400).json({ error: error.message });
     }
   }
 
-  async getDetailedSubjects(req, res) {
+  async deleteStudent(req, res) {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
-      const result = await teacherService.getDetailedSubjects(token);
+      const { id } = req.params;
+      const result = await teacherService.deleteStudent(req.user.id, id);
       res.json(result);
     } catch (error) {
-      console.error('Error obteniendo asignaturas detalladas:', error);
-      res.status(500).json({ error: error.message });
+      console.error('Error eliminando estudiante:', error);
+      res.status(400).json({ error: error.message });
     }
   }
 }

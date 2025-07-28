@@ -1,29 +1,23 @@
 const { Session } = require('../models');
 
 class SessionRepository {
-  async createSession(userId) {
+  async create(userId) {
     return await Session.create({
-      userId,
-      loginAt: new Date(),
-      logoutAt: null
+      id_user: userId,
+      signed_at: new Date()
     });
   }
 
   async closeSession(userId) {
-    const session = await Session.findOne({
-      where: {
-        userId,
-        logoutAt: null
-      },
-      order: [['loginAt', 'DESC']]
+    return await Session.destroy({
+      where: { id_user: userId }
     });
+  }
 
-    if (session) {
-      session.logoutAt = new Date();
-      await session.save();
-    }
-
-    return session;
+  async getActiveSession(userId) {
+    return await Session.findOne({
+      where: { id_user: userId }
+    });
   }
 }
 
