@@ -1,4 +1,5 @@
 {
+  "deleteStudent": "Eliminar estudiante",
   "title": "Panel de Profesor",
   "subtitle": "Gestiona tus estudiantes",
   "studentsTitle": "Mis Estudiantes",
@@ -42,7 +43,8 @@
   "saving": "Guardando...",
   "profile" : "Mi perfil",
   "chat": "Chat",
-  "logout": "Cerrar sesión"
+  "logout": "Cerrar sesión",
+  "paginationInfo": "Mostrando {start} - {end} de {total} estudiantes"
 
 
 }

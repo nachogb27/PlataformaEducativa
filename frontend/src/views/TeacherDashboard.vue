@@ -147,11 +147,11 @@
           <table class="students-table">
             <thead>
               <tr>
-                <th>Nombre del alumno</th>
-                <th>Apellidos del alumno</th>
-                <th>Email del alumno</th>
-                <th>Nombre de la asignatura</th>
-                <th>Acciones</th>
+                <th>{{ $t('TeacherDashboard.studentName') }}</th>
+                <th>{{ $t('TeacherDashboard.studentSurname') }}</th>
+                <th>{{ $t('TeacherDashboard.studentEmail') }}</th>
+                <th>{{ $t('TeacherDashboard.subjectName') }}</th>
+                <th>{{ $t('TeacherDashboard.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -179,7 +179,7 @@
                     <button 
                       @click="deleteStudent(student)" 
                       class="action-button delete-button"
-                      title="Eliminar estudiante"
+                      :title="$t('TeacherDashboard.deleteStudent')"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z" fill="currentColor"/>
@@ -195,7 +195,7 @@
         <!-- Paginación -->
         <div v-if="filteredStudents.length > pageSize" class="pagination-container">
           <div class="pagination-info">
-            Mostrando {{ startIndex + 1 }} - {{ endIndex }} de {{ filteredStudents.length }} estudiantes
+            {{$t('TeacherDashboard.paginationInfo', { start: startIndex + 1, end: endIndex, total: filteredStudents.length })}}
           </div>
           
           <div class="pagination-controls">

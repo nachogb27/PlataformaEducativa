@@ -20,5 +20,6 @@
   "errorSaving": "Error saving conversation",
   "savedSuccessfully": "Conversation saved successfully",
   "selectUserDescription": "Choose a user from the list to start chatting",
-  "messages": "messages"
+  "messages": "messages",
+  "typeMessage": "Type a message..."
 }
