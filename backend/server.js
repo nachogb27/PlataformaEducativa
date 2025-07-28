@@ -1955,21 +1955,37 @@ app.post('/api/chat/save-conversation', async (req, res) => {
       await conversation.save();
     }
 
-    // 🔧 DECLARAR VARIABLES AL INICIO
     let newMessagesCount = 0;
     let duplicateCount = 0;
 
-    // Solo guardar si hay mensajes
+    // 🔧 FIX: Guardar solo mensajes NO GUARDADOS
     if (messages.length > 0) {
+      // Obtener IDs de mensajes ya guardados
+      const existingMessages = await Message.find({
+        $or: [
+          { 'sender.userId': decoded.userId, 'receiver.userId': participantId },
+          { 'sender.userId': participantId, 'receiver.userId': decoded.userId }
+        ]
+      }).select('messageId timestamp');
+
+      const existingMessageIds = new Set(existingMessages.map(m => m.messageId));
+      const existingTimestamps = new Set(existingMessages.map(m => m.timestamp.getTime()));
+
       for (const msg of messages) {
         try {
-          // Generar ID único
           const messageId = msg.messageId || `msg_${msg.from}_${msg.to}_${new Date(msg.timestamp).getTime()}_${Math.random().toString(36).substr(2, 9)}`;
+          const timestamp = new Date(msg.timestamp);
+          
+          // 🔧 FIX: Verificar duplicados por ID Y timestamp
+          if (existingMessageIds.has(messageId) || existingTimestamps.has(timestamp.getTime())) {
+            duplicateCount++;
+            continue; // Skip este mensaje
+          }
           
           const messageData = {
             messageId: messageId,
             content: msg.text || msg.content,
-            timestamp: new Date(msg.timestamp),
+            timestamp: timestamp,
             sender: {
               userId: msg.from,
               username: msg.from === decoded.userId ? currentUser.username : otherUser.username,
@@ -1984,13 +2000,17 @@ app.post('/api/chat/save-conversation', async (req, res) => {
             }
           };
 
-          // Intentar guardar
+          // Guardar mensaje
           const newMessage = new Message(messageData);
           await newMessage.save();
           newMessagesCount++;
           
+          // Añadir a sets para evitar duplicados en la misma sesión
+          existingMessageIds.add(messageId);
+          existingTimestamps.add(timestamp.getTime());
+          
         } catch (error) {
-          if (error.code === 11000) { // Duplicado
+          if (error.code === 11000) { // Duplicado en DB
             duplicateCount++;
           } else {
             throw error;
@@ -2010,11 +2030,11 @@ app.post('/api/chat/save-conversation', async (req, res) => {
         });
       }
 
-      console.log(`💾 ✅ Guardado completado: ${newMessagesCount} nuevos, ${duplicateCount} duplicados ignorados`);
+      console.log(`💾 ✅ Guardado: ${newMessagesCount} nuevos, ${duplicateCount} duplicados ignorados`);
     }
 
     res.json({ 
-      message: `Conversación actualizada exitosamente`,
+      message: `Conversación actualizada: ${newMessagesCount} mensajes nuevos guardados`,
       conversationId: conversation._id,
       newMessages: newMessagesCount,
       duplicatesIgnored: duplicateCount
@@ -2178,10 +2198,10 @@ wss.on('connection', (ws, req) => {
         return;
       }
 
-      // Envío de mensaje (SOLO WebSocket, NO guardar en BD)
+      // 🔧 FIX: Envío de mensaje MEJORADO
       if (data.type === 'message' && data.from && data.to && data.text) {
         const timestamp = new Date();
-        const messageId = `msg_${data.from}_${data.to}_${timestamp.getTime()}_${Math.random().toString(36).substr(2, 9)}`;
+        const messageId = data.messageId || `msg_${data.from}_${data.to}_${timestamp.getTime()}_${Math.random().toString(36).substr(2, 9)}`;
         
         // Preparar mensaje para envío WebSocket
         const wsMessage = {
@@ -2193,22 +2213,24 @@ wss.on('connection', (ws, req) => {
           messageId: messageId
         };
 
-        // Enviar a destinatario si está conectado
+        // 🔧 FIX: Enviar PRIMERO al remitente (confirmación)
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            ...wsMessage,
+            type: 'message_sent' // Confirmación para el remitente
+          }));
+        }
+
+        // 🔧 FIX: Enviar DESPUÉS al destinatario
         const recipientWs = clients.get(data.to);
-        if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
+        if (recipientWs && recipientWs.readyState === WebSocket.OPEN && recipientWs !== ws) {
           recipientWs.send(JSON.stringify(wsMessage));
           console.log(`📤 Mensaje enviado en tiempo real a usuario ${data.to}`);
         } else {
           console.log(`📴 Usuario ${data.to} no está conectado`);
         }
 
-        // Confirmar al remitente
-        ws.send(JSON.stringify({
-          ...wsMessage,
-          type: 'message_sent'
-        }));
-
-        console.log(`💬 Mensaje en tiempo real: ${data.from} -> ${data.to} (NO guardado)`);
+        console.log(`💬 Mensaje en tiempo real: ${data.from} -> ${data.to}`);
       }
 
       // Solicitud de historial (desde MongoDB)
@@ -2219,7 +2241,7 @@ wss.on('connection', (ws, req) => {
               { 'sender.userId': ws.userId, 'receiver.userId': data.with },
               { 'sender.userId': data.with, 'receiver.userId': ws.userId }
             ]
-          }).sort({ timestamp: 1 }).limit(50);
+          }).sort({ timestamp: 1 }).limit(100);
 
           ws.send(JSON.stringify({
             type: 'history',
@@ -2228,6 +2250,7 @@ wss.on('connection', (ws, req) => {
               to: msg.receiver.userId,
               text: msg.content,
               timestamp: msg.timestamp,
+              messageId: msg._id.toString(),
               senderName: msg.sender.name,
               receiverName: msg.receiver.name
             })),
@@ -2280,5 +2303,6 @@ wss.on('connection', (ws, req) => {
     }
   });
 });
+
 
 console.log('🔄 WebSocket chat en tiempo real iniciado (sin guardado automático).');
