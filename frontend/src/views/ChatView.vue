@@ -352,96 +352,150 @@ export default {
     },
 
     handleWebSocketMessage(data) {
-      console.log('📨 Mensaje WebSocket recibido:', data)
+  console.log('📨 Mensaje WebSocket recibido:', data);
 
-      switch (data.type) {
-        case 'registered':
-          console.log('✅ Usuario registrado en WebSocket')
-          break
+  switch (data.type) {
+    case 'registered':
+      console.log('✅ Usuario registrado en WebSocket');
+      break;
 
-        case 'message':
-          // Mensaje recibido de otro usuario
-          if (this.selectedUser && data.from === this.selectedUser.userId) {
-            this.currentMessages.push({
-              from: data.from,
-              to: data.to,
-              text: data.text,
-              timestamp: data.timestamp
-            })
-            this.scrollToBottom()
-          }
-          this.showNotification(`Nuevo mensaje de ${data.senderName}`, 'info')
-          break
-
-        case 'message_sent':
-          // Confirmación de mensaje enviado
-          console.log('✅ Mensaje enviado confirmado')
-          break
-
-        case 'history':
-          // Historial de mensajes recibido
-          this.currentMessages = data.messages || []
-          this.scrollToBottom()
-          break
-
-        case 'error':
-          console.error('❌ Error del servidor:', data.message)
-          this.showNotification('Error: ' + data.message, 'error')
-          break
+    case 'message':
+      // 🔧 FIX: Solo agregar si es para el chat actual Y no existe ya
+      if (this.selectedUser && data.from === this.selectedUser.userId) {
+        const messageExists = this.currentMessages.some(msg => 
+          msg.messageId === data.messageId ||
+          (msg.from === data.from && 
+           msg.to === data.to && 
+           msg.text === data.text && 
+           Math.abs(new Date(msg.timestamp) - new Date(data.timestamp)) < 1000)
+        );
+        
+        if (!messageExists) {
+          this.currentMessages.push({
+            from: data.from,
+            to: data.to,
+            text: data.text,
+            timestamp: data.timestamp,
+            messageId: data.messageId
+          });
+          this.scrollToBottom();
+        }
       }
-    },
+      this.showNotification(`Nuevo mensaje de ${data.senderName}`, 'info');
+      break;
 
-    async selectUser(userItem) {
-      if (this.selectedUser?.userId === userItem.userId) return
+    case 'message_sent':
+      // 🔧 FIX: Confirmación de mensaje enviado - NO agregar a la lista
+      console.log('✅ Mensaje enviado confirmado');
+      break;
 
-      console.log('👤 Seleccionando usuario:', userItem)
-      this.selectedUser = userItem
-      this.currentMessages = []
-      this.loadingMessages = true
-
-      // Solicitar historial de mensajes
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({
-          type: 'get_history',
-          with: userItem.userId
-        }))
-      }
-
-      // Timeout para loading
-      setTimeout(() => {
-        this.loadingMessages = false
-      }, 2000)
-    },
-
-    sendMessage() {
-      if (!this.newMessage.trim() || !this.selectedUser || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
-        return
-      }
-      const timestamp = new Date();
-      const messageId = `msg_${this.user.id}_${this.selectedUser.userId}_${timestamp.getTime()}_${Math.random().toString(36).substr(2, 9)}`;
-
-      const messageData = {
-        type: 'message',
-        from: this.user.id,
-        to: this.selectedUser.userId,
-        text: this.newMessage.trim(),
-        timestamp: timestamp,
-        messageId: messageId  // 🆕 Añadir ID único
-      }
-
-      // Añadir mensaje a la lista local inmediatamente
-      this.currentMessages.push(messageData)
+    case 'history': {
+      // 🔧 FIX: Reemplazar completamente los mensajes
+      const historyMessages = data.messages || [];
       
-      // Enviar por WebSocket
-      this.ws.send(JSON.stringify(messageData))
+      console.log(`📜 Cargando historial: ${historyMessages.length} mensajes`);
+      
+      // Limpiar mensajes actuales y cargar historial
+      this.currentMessages = historyMessages.map(msg => ({
+        from: msg.from,
+        to: msg.to,
+        text: msg.text || msg.content,
+        timestamp: msg.timestamp,
+        messageId: msg.messageId || `${msg.from}_${msg.to}_${msg.timestamp}`
+      }));
+      
+      this.scrollToBottom();
+      this.loadingMessages = false;
+      break;
+    }
 
-      // Limpiar input
-      this.newMessage = ''
-      this.adjustTextareaHeight()
-      this.scrollToBottom()
+    case 'error':
+      console.error('❌ Error del servidor:', data.message);
+      this.showNotification('Error: ' + data.message, 'error');
+      break;
+  }
+},
 
-      console.log('📤 Mensaje enviado:', messageData)
-    },
+async selectUser(userItem) {
+  const selectedUserId = userItem.id || userItem.userId;
+  
+  // Prevenir selección del mismo usuario
+  if (this.selectedUser?.id === selectedUserId || this.selectedUser?.userId === selectedUserId) {
+    return;
+  }
+  
+  // Prevenir llamadas múltiples simultáneas
+  if (this.loadingMessages) {
+    return;
+  }
+
+  console.log('👤 Seleccionando usuario:', userItem);
+  
+  this.selectedUser = {
+    ...userItem,
+    id: selectedUserId,
+    userId: selectedUserId
+  };
+  
+  // 🔧 FIX: Limpiar COMPLETAMENTE los mensajes anteriores
+  this.currentMessages = [];
+  this.loadingMessages = true;
+
+  // Solicitar historial
+  if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    this.ws.send(JSON.stringify({
+      type: 'get_history',  
+      with: selectedUserId
+    }));
+  }
+
+  // Timeout para loading
+  setTimeout(() => {
+    if (this.loadingMessages) {
+      this.loadingMessages = false;
+    }
+  }, 3000);
+},
+
+// Método sendMessage CORREGIDO
+sendMessage() {
+  if (!this.newMessage.trim() || !this.selectedUser || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
+    return;
+  }
+  
+  const timestamp = new Date();
+  const selectedUserId = this.selectedUser.id || this.selectedUser.userId;
+  const messageId = `msg_${this.user.id}_${selectedUserId}_${timestamp.getTime()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  const messageData = {
+    type: 'message',
+    from: this.user.id,
+    to: selectedUserId,
+    text: this.newMessage.trim(),
+    timestamp: timestamp,
+    messageId: messageId
+  };
+
+  // 🔧 FIX: Agregar mensaje localmente INMEDIATAMENTE
+  this.currentMessages.push({
+    from: this.user.id,
+    to: selectedUserId,
+    text: this.newMessage.trim(),
+    timestamp: timestamp,
+    messageId: messageId
+  });
+  
+  // Enviar por WebSocket
+  this.ws.send(JSON.stringify(messageData));
+
+  // Limpiar input y scroll
+  this.newMessage = '';
+  this.adjustTextareaHeight();
+  this.scrollToBottom();
+
+  console.log('📤 Mensaje enviado:', messageData);
+}
+,
 
     async saveConversation() {
       if (this.currentMessages.length === 0 || !this.selectedUser) {
