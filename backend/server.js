@@ -6,8 +6,8 @@ const mongoose = require('mongoose');
 const WebSocket = require('ws');
 const { checkBucketExists } = require('./config/aws');
 
-// Importar modelos principales
-const { sequelize } = require('./index');
+// Importar modelos principales - CORREGIDO
+const { sequelize } = require('./models/index'); // Cambié de ./index a ./models/index
 
 // Importar rutas
 const routes = require('./routes');
@@ -19,6 +19,16 @@ const PORT = 3000;
 // Middlewares globales
 app.use(cors());
 app.use(express.json());
+
+// DEBUG: Log de todas las requests
+app.use((req, res, next) => {
+  console.log(`📡 ${req.method} ${req.url}`);
+  console.log('Headers:', req.headers);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log('Body:', req.body);
+  }
+  next();
+});
 
 // Servir archivos estáticos
 app.use('/uploads', express.static('uploads'));
@@ -49,8 +59,17 @@ mongoose.connect(MONGODB_URI, {
   }
 })();
 
+// DEBUG: Verificar que las rutas se cargan correctamente
+console.log('🔗 Cargando rutas...');
+
 // Usar todas las rutas con prefijo /api
 app.use('/api', routes);
+
+// Ruta de prueba simple para auth
+app.post('/api/auth/test', (req, res) => {
+  console.log('🧪 Test route hit');
+  res.json({ message: 'Test route working', body: req.body });
+});
 
 // Middleware de manejo de errores
 app.use((error, req, res, next) => {
@@ -80,6 +99,12 @@ app.use((error, req, res, next) => {
   });
 });
 
+// Catch-all para rutas no encontradas
+app.use('*', (req, res) => {
+  console.log('❌ Ruta no encontrada:', req.method, req.originalUrl);
+  res.status(404).json({ error: 'Ruta no encontrada', path: req.originalUrl });
+});
+
 // Ruta de prueba
 app.get('/health', (req, res) => {
   res.json({ 
@@ -99,7 +124,6 @@ const server = app.listen(PORT, () => {
   console.log(`🔐 Cifrado de contraseñas: ACTIVADO (bcrypt)`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
 });
-
 
 // === INTEGRACIÓN WEBSOCKET CHAT SIN GUARDADO AUTOMÁTICO ===
 const wss = new WebSocket.Server({ server });
@@ -179,6 +203,7 @@ wss.on('connection', (ws, req) => {
       // Solicitud de historial (desde MongoDB)
       if (data.type === 'get_history' && data.with && ws.userId) {
         try {
+          const { Message } = require('./models/chat.model');
           const messages = await Message.find({
             $or: [
               { 'sender.userId': ws.userId, 'receiver.userId': data.with },
@@ -246,6 +271,5 @@ wss.on('connection', (ws, req) => {
     }
   });
 });
-
 
 console.log('🔄 WebSocket chat en tiempo real iniciado (sin guardado automático).');

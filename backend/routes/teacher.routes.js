@@ -1,20 +1,34 @@
 const express = require('express');
 const teacherController = require('../controllers/teacher.controller');
 const { authenticateToken } = require('../middleware/auth');
-const { validateTeacherRole } = require('../middleware/roleValidation');
 
 const router = express.Router();
 
-// Todas las rutas requieren autenticación y rol de profesor
+// Todas las rutas de teacher requieren autenticación
 router.use(authenticateToken);
-router.use(validateTeacherRole);
 
+// Obtener estudiantes del profesor
 router.get('/students', teacherController.getStudents);
-router.get('/subject/:subjectId/students', teacherController.getAssignedStudents);
-router.get('/subject/:subjectId/available-students', teacherController.getAvailableStudents);
-router.post('/assign-student', teacherController.assignStudent);
-router.post('/remove-student', teacherController.removeStudent);
-router.put('/student/:id', teacherController.editStudent);
-router.delete('/student/:id', teacherController.deleteStudent);
+
+// Obtener asignaturas que imparte el profesor
+router.get('/subjects', teacherController.getSubjects);
+
+// Obtener estudiantes asignados a una asignatura específica
+router.get('/subjects/:subjectId/students', teacherController.getAssignedStudents);
+
+// Obtener estudiantes disponibles para asignar a una asignatura
+router.get('/subjects/:subjectId/available-students', teacherController.getAvailableStudents);
+
+// Asignar estudiante a asignatura
+router.post('/subjects/:subjectId/assign-student', teacherController.assignStudentToSubject);
+
+// Quitar estudiante de asignatura
+router.delete('/subjects/:subjectId/students/:studentId', teacherController.removeStudentFromSubject);
+
+// Editar estudiante
+router.put('/students/:studentId', teacherController.editStudent);
+
+// Eliminar estudiante de todas las asignaturas del profesor
+router.delete('/students/:studentId', teacherController.deleteStudent);
 
 module.exports = router;

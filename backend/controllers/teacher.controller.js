@@ -3,76 +3,99 @@ const teacherService = require('../services/teacher.service');
 class TeacherController {
   async getStudents(req, res) {
     try {
-      const students = await teacherService.getStudents(req.user.id);
+      const teacherId = req.user.userId;
+      const students = await teacherService.getStudents(teacherId);
       res.json(students);
     } catch (error) {
-      console.error('Error obteniendo estudiantes:', error);
+      console.error('Error en getStudents:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async getSubjects(req, res) {
+    try {
+      const teacherId = req.user.userId;
+      const subjects = await teacherService.getSubjects(teacherId);
+      res.json(subjects);
+    } catch (error) {
+      console.error('Error en getSubjects:', error);
       res.status(500).json({ error: error.message });
     }
   }
 
   async getAssignedStudents(req, res) {
     try {
+      const teacherId = req.user.userId;
       const { subjectId } = req.params;
-      const students = await teacherService.getAssignedStudents(req.user.id, subjectId);
+      const students = await teacherService.getAssignedStudents(teacherId, subjectId);
       res.json(students);
     } catch (error) {
-      console.error('Error obteniendo estudiantes asignados:', error);
+      console.error('Error en getAssignedStudents:', error);
       res.status(500).json({ error: error.message });
     }
   }
 
   async getAvailableStudents(req, res) {
     try {
+      const teacherId = req.user.userId;
       const { subjectId } = req.params;
-      const students = await teacherService.getAvailableStudents(req.user.id, subjectId);
+      const students = await teacherService.getAvailableStudents(teacherId, subjectId);
       res.json(students);
     } catch (error) {
-      console.error('Error obteniendo estudiantes disponibles:', error);
+      console.error('Error en getAvailableStudents:', error);
       res.status(500).json({ error: error.message });
     }
   }
 
-  async assignStudent(req, res) {
+  async assignStudentToSubject(req, res) {
     try {
-      const { studentId, subjectId } = req.body;
-      const result = await teacherService.assignStudentToSubject(req.user.id, studentId, subjectId);
+      const teacherId = req.user.userId;
+      const { subjectId } = req.params;
+      const { studentId } = req.body;
+      
+      const result = await teacherService.assignStudentToSubject(teacherId, studentId, subjectId);
       res.json(result);
     } catch (error) {
-      console.error('Error asignando estudiante:', error);
+      console.error('Error en assignStudentToSubject:', error);
       res.status(400).json({ error: error.message });
     }
   }
 
-  async removeStudent(req, res) {
+  async removeStudentFromSubject(req, res) {
     try {
-      const { studentId, subjectId } = req.body;
-      const result = await teacherService.removeStudentFromSubject(req.user.id, studentId, subjectId);
+      const teacherId = req.user.userId;
+      const { subjectId, studentId } = req.params;
+      
+      const result = await teacherService.removeStudentFromSubject(teacherId, studentId, subjectId);
       res.json(result);
     } catch (error) {
-      console.error('Error removiendo estudiante:', error);
+      console.error('Error en removeStudentFromSubject:', error);
       res.status(400).json({ error: error.message });
     }
   }
 
   async editStudent(req, res) {
     try {
-      const { id } = req.params;
-      const result = await teacherService.editStudent(req.user.id, id, req.body);
+      const teacherId = req.user.userId;
+      const { studentId } = req.params;
+      
+      const result = await teacherService.editStudent(teacherId, studentId, req.body);
       res.json(result);
     } catch (error) {
-      console.error('Error editando estudiante:', error);
+      console.error('Error en editStudent:', error);
       res.status(400).json({ error: error.message });
     }
   }
 
   async deleteStudent(req, res) {
     try {
-      const { id } = req.params;
-      const result = await teacherService.deleteStudent(req.user.id, id);
+      const teacherId = req.user.userId;
+      const { studentId } = req.params;
+      
+      const result = await teacherService.deleteStudent(teacherId, studentId);
       res.json(result);
     } catch (error) {
-      console.error('Error eliminando estudiante:', error);
+      console.error('Error en deleteStudent:', error);
       res.status(400).json({ error: error.message });
     }
   }
