@@ -142,6 +142,35 @@ class TeacherService {
     return { message: 'Estudiante eliminado de tu lista exitosamente' };
   }
 
+
+
+  async getSubjects(teacherId) {
+    const relations = await relationRepository.findSubjectsByTeacher(teacherId);
+    
+    // Agrupar por asignatura y contar estudiantes
+    const subjectCounts = {};
+    relations.forEach(relation => {
+      const subjectId = relation.subject.id;
+      const subjectName = relation.subject.subject_name;
+      
+      if (subjectCounts[subjectId]) {
+        // Solo contar si no es una relación dummy
+        if (relation.id_student !== relation.id_teacher) {
+          subjectCounts[subjectId].studentCount++;
+        }
+      } else {
+        subjectCounts[subjectId] = {
+          id: subjectId,
+          subject_name: subjectName,
+          studentCount: relation.id_student !== relation.id_teacher ? 1 : 0,
+          isTeaching: true
+        };
+      }
+    });
+    
+    return Object.values(subjectCounts);
+  }
+
   buildAvatarUrl(avatarPath) {
     if (!avatarPath) return null;
     

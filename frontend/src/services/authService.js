@@ -1,6 +1,6 @@
 // services/authService.js
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'http://localhost:3000/api/auth';
 
 const authService = {
   // Login del usuario

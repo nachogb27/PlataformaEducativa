@@ -17,49 +17,54 @@ class AuthService {
     this.client = new OAuth2Client(this.CLIENT_ID);
   }
 
-  async login(credentials) {
-    const { username, password } = credentials;
+ async login(credentials) {
+  const { username, password } = credentials;
 
-    // Buscar usuario
-    const user = await userRepository.findByUsername(username);
-    if (!user) {
-      throw new Error('Credenciales incorrectas');
-    }
-
-    // Verificar cuenta activada
-    if (user.active === 0) {
-      throw new Error('La cuenta no está activada');
-    }
-
-    // Validar contraseña
-    const isPasswordValid = bcrypt.compareSync(password, user.password_token);
-    if (!isPasswordValid) {
-      throw new Error('Credenciales incorrectas');
-    }
-
-    // Crear sesión
-    await sessionRepository.create(user.id);
-
-    // Generar JWT
-    const token = jwt.sign(
-      { userId: user.id, role: user.roleData.role_name },
-      this.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    return {
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        surnames: user.surnames,
-        email: user.email,
-        role: user.roleData.role_name,
-        avatar: user.avatar
-      }
-    };
+  // Buscar usuario
+  const user = await userRepository.findByUsername(username);
+  if (!user) {
+    throw new Error('Credenciales incorrectas');
   }
+
+  // Verificar cuenta activada
+  if (user.active === 0) {
+    throw new Error('La cuenta no está activada');
+  }
+
+  // Verificar que el usuario tiene contraseña (no es usuario de Google)
+  if (!user.password_token || user.password_token === '') {
+    throw new Error('Esta cuenta fue creada con Google. Usa el botón de Google para iniciar sesión.');
+  }
+
+  // Validar contraseña
+  const isPasswordValid = bcrypt.compareSync(password, user.password_token);
+  if (!isPasswordValid) {
+    throw new Error('Credenciales incorrectas');
+  }
+
+  // Crear sesión
+  await sessionRepository.create(user.id);
+
+  // Generar JWT
+  const token = jwt.sign(
+    { userId: user.id, role: user.roleData.role_name },
+    this.JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      surnames: user.surnames,
+      email: user.email,
+      role: user.roleData.role_name,
+      avatar: user.avatar
+    }
+  };
+}
 
   async loginWithGoogle(idToken) {
     try {
