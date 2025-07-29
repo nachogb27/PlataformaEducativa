@@ -99,6 +99,112 @@ class TeacherController {
       res.status(400).json({ error: error.message });
     }
   }
+
+  // 🔧 AGREGAR ESTOS MÉTODOS AL FINAL DE tu teacher.controller.js
+
+  // Método alternativo para remover estudiante (POST con body)
+  async removeStudentFromSubjectByPost(req, res) {
+    try {
+      const teacherId = req.user.userId;
+      const { studentId, subjectId } = req.body;
+      
+      console.log(`🗑️ Removiendo estudiante ${studentId} de asignatura ${subjectId} por profesor ${teacherId}`);
+      
+      const result = await teacherService.removeStudentFromSubject(teacherId, studentId, subjectId);
+      res.json(result);
+    } catch (error) {
+      console.error('Error en removeStudentFromSubjectByPost:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  // Método alternativo para asignar estudiante (POST con body)
+  async assignStudentToSubjectByPost(req, res) {
+    try {
+      const teacherId = req.user.userId;
+      const { studentId, subjectId } = req.body;
+      
+      console.log(`➕ Asignando estudiante ${studentId} a asignatura ${subjectId} por profesor ${teacherId}`);
+      
+      const result = await teacherService.assignStudentToSubject(teacherId, studentId, subjectId);
+      res.json(result);
+    } catch (error) {
+      console.error('Error en assignStudentToSubjectByPost:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  // 🔧 AGREGAR ESTOS MÉTODOS AL FINAL DE tu teacher.controller.js
+
+  // Método alternativo para remover estudiante (POST con body)
+  async removeStudentFromSubjectByPost(req, res) {
+    try {
+      const teacherId = req.user.userId;
+      const { studentId, subjectId } = req.body;
+      
+      console.log(`🗑️ Removiendo estudiante ${studentId} de asignatura ${subjectId} por profesor ${teacherId}`);
+      
+      const result = await teacherService.removeStudentFromSubject(teacherId, studentId, subjectId);
+      res.json(result);
+    } catch (error) {
+      console.error('Error en removeStudentFromSubjectByPost:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  // Método alternativo para asignar estudiante (POST con body)
+  async assignStudentToSubjectByPost(req, res) {
+    try {
+      const teacherId = req.user.userId;
+      const { studentId, subjectId } = req.body;
+      
+      console.log(`➕ Asignando estudiante ${studentId} a asignatura ${subjectId} por profesor ${teacherId}`);
+      
+      const result = await teacherService.assignStudentToSubject(teacherId, studentId, subjectId);
+      res.json(result);
+    } catch (error) {
+      console.error('Error en assignStudentToSubjectByPost:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  // 🔧 NUEVO MÉTODO: Unirse a asignatura  
+  async joinSubject(req, res) {
+    try {
+      const teacherId = req.user.userId;
+      const { subjectId } = req.body;
+      
+      console.log(`🎓 Profesor ${teacherId} uniéndose a asignatura ${subjectId}`);
+      
+      // Importar el servicio de subjects
+      const subjectService = require('../services/subject.service');
+      const result = await subjectService.joinAsTeacher(teacherId, subjectId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error en joinSubject:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  // Método para unirse a asignatura
+async joinSubject(req, res) {
+  try {
+    const teacherId = req.user.userId;
+    const { subjectId } = req.body;
+    
+    console.log(`🎓 Profesor ${teacherId} uniéndose a asignatura ${subjectId}`);
+    
+    // Importar el servicio de subjects
+    const subjectService = require('../services/subject.service');
+    const result = await subjectService.joinAsTeacher(teacherId, subjectId);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error en joinSubject:', error);
+    res.status(400).json({ error: error.message });
+  }
+}
 }
 
 module.exports = new TeacherController();

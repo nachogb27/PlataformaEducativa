@@ -1,6 +1,6 @@
-// middleware/auth.js
+// 🔧 IMPORTACIÓN CORREGIDA: Usar ruta relativa correcta
 const jwt = require('jsonwebtoken');
-const { User, Role } = require('../index'); // Volver a importar desde el archivo principal
+const { User, Role } = require('../models/index'); // Cambié de ../index a ../models/index
 
 const authenticateToken = async (req, res, next) => {
   try {
@@ -40,7 +40,7 @@ const authenticateToken = async (req, res, next) => {
     // 🔧 ARREGLO: Configurar tanto 'id' como 'userId' para compatibilidad
     req.user = {
       id: user.id,
-      userId: user.id, // ← AÑADIDO: Para compatibilidad con el controller
+      userId: user.id, // ← Para compatibilidad con el controller
       username: user.username,
       name: user.name,
       surnames: user.surnames,
@@ -49,7 +49,12 @@ const authenticateToken = async (req, res, next) => {
       avatar: user.avatar
     };
 
-    console.log('👤 req.user configurado:', req.user);
+    console.log('👤 req.user configurado:', {
+      id: req.user.id,
+      userId: req.user.userId,
+      role: req.user.role
+    });
+
     next();
   } catch (error) {
     console.error('❌ Error en autenticación:', error);

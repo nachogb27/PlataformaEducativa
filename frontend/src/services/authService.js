@@ -39,7 +39,7 @@ const authService = {
     try {
       console.log('🔄 AuthService: Enviando código a backend')
       
-      const response = await fetch(`${API_URL}/auth/google/code`, {
+      const response = await fetch(`${API_URL}/google/code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ const authService = {
       console.log('🔄 AuthService: Enviando token a:', `${API_URL}/auth/google`)
       console.log('🔑 Token enviado (primeros 50 chars):', idToken.substring(0, 50) + '...')
       
-      const response = await fetch(`${API_URL}/auth/google`, {
+      const response = await fetch(`${API_URL}/google`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

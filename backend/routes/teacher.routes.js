@@ -7,28 +7,34 @@ const router = express.Router();
 // Todas las rutas de teacher requieren autenticación
 router.use(authenticateToken);
 
-// Obtener estudiantes del profesor
+// 🔧 RUTAS BÁSICAS (sin parámetros)
 router.get('/students', teacherController.getStudents);
-
-// Obtener asignaturas que imparte el profesor
 router.get('/subjects', teacherController.getSubjects);
 
+// 🔧 RUTAS CON PARÁMETROS - CAMBIO IMPORTANTE: 
+// Cambiamos de '/subjects/:subjectId/...' a '/subject/:subjectId/...' (singular)
+// para coincidir con lo que el frontend está enviando
+
 // Obtener estudiantes asignados a una asignatura específica
-router.get('/subjects/:subjectId/students', teacherController.getAssignedStudents);
+router.get('/subject/:subjectId/students', teacherController.getAssignedStudents);
 
 // Obtener estudiantes disponibles para asignar a una asignatura
-router.get('/subjects/:subjectId/available-students', teacherController.getAvailableStudents);
+router.get('/subject/:subjectId/available-students', teacherController.getAvailableStudents);
 
-// Asignar estudiante a asignatura
-router.post('/subjects/:subjectId/assign-student', teacherController.assignStudentToSubject);
+// Asignar estudiante a asignatura  
+router.post('/subject/:subjectId/assign-student', teacherController.assignStudentToSubject);
 
-// Quitar estudiante de asignatura
-router.delete('/subjects/:subjectId/students/:studentId', teacherController.removeStudentFromSubject);
+// Quitar estudiante de asignatura (dos rutas para compatibilidad)
+router.delete('/subject/:subjectId/students/:studentId', teacherController.removeStudentFromSubject);
+router.post('/remove-student', teacherController.removeStudentFromSubjectByPost); // ← NUEVA RUTA
 
-// Editar estudiante
+// Asignar estudiante (ruta alternativa para compatibilidad)
+router.post('/assign-student', teacherController.assignStudentToSubjectByPost); // ← NUEVA RUTA
+
+// 🔧 RUTAS DE GESTIÓN DE ESTUDIANTES (sin cambios)
 router.put('/students/:studentId', teacherController.editStudent);
-
-// Eliminar estudiante de todas las asignaturas del profesor
 router.delete('/students/:studentId', teacherController.deleteStudent);
+
+router.post('/join-subject', teacherController.joinSubject);
 
 module.exports = router;

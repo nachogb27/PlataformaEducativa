@@ -6,8 +6,8 @@ const mongoose = require('mongoose');
 const WebSocket = require('ws');
 const { checkBucketExists } = require('./config/aws');
 
-// Importar modelos principales - CORREGIDO
-const { sequelize } = require('./models/index'); // Cambié de ./index a ./models/index
+
+const { sequelize } = require('./models/index');
 
 // Importar rutas
 const routes = require('./routes');
@@ -64,6 +64,10 @@ console.log('🔗 Cargando rutas...');
 
 // Usar todas las rutas con prefijo /api
 app.use('/api', routes);
+
+const authRoutes = require('./routes/auth.routes');
+app.use('/api', authRoutes);
+
 
 // Ruta de prueba simple para auth
 app.post('/api/auth/test', (req, res) => {

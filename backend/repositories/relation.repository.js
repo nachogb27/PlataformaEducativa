@@ -1,4 +1,4 @@
-const { StudentsTeachersRelation, User, Subject } = require('../models');
+const { StudentsTeachersRelation, User, Subject, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 class RelationRepository {
@@ -64,31 +64,33 @@ class RelationRepository {
     });
   }
 
-  async findAvailableStudents(subjectId) {
-    // Obtener IDs de estudiantes ya asignados
-    const assignedRelations = await StudentsTeachersRelation.findAll({
-      where: {
-        id_subject: subjectId,
-        id_student: { [Op.ne]: require('sequelize').col('id_teacher') }
-      },
-      attributes: ['id_student']
-    });
+ // ALTERNATIVA MÁS SIMPLE para findAvailableStudents
+async findAvailableStudents(subjectId) {
+  // Paso 1: Obtener TODAS las relaciones de esta asignatura
+  const allRelations = await StudentsTeachersRelation.findAll({
+    where: { id_subject: subjectId },
+    attributes: ['id_student', 'id_teacher']
+  });
 
-    const assignedStudentIds = assignedRelations.map(r => r.id_student);
+  // Paso 2: Filtrar solo estudiantes reales (no relaciones dummy)
+  const assignedStudentIds = allRelations
+    .filter(relation => relation.id_student !== relation.id_teacher)
+    .map(relation => relation.id_student);
 
-    // Construir consulta para estudiantes disponibles
-    let whereClause = { role: 1 }; // Solo estudiantes
+  // Paso 3: Construir consulta para estudiantes disponibles
+  let whereClause = { role: 1 }; // Solo estudiantes
 
-    if (assignedStudentIds.length > 0) {
-      whereClause.id = { [Op.notIn]: assignedStudentIds };
-    }
-
-    return await User.findAll({
-      where: whereClause,
-      attributes: ['id', 'name', 'surnames', 'email', 'avatar'],
-      order: [['name', 'ASC'], ['surnames', 'ASC']]
-    });
+  if (assignedStudentIds.length > 0) {
+    whereClause.id = { [Op.notIn]: assignedStudentIds };
   }
+
+  // Paso 4: Obtener estudiantes disponibles
+  return await User.findAll({
+    where: whereClause,
+    attributes: ['id', 'name', 'surnames', 'email', 'avatar'],
+    order: [['name', 'ASC'], ['surnames', 'ASC']]
+  });
+}
 
   async create(relationData) {
     return await StudentsTeachersRelation.create(relationData);
@@ -119,6 +121,39 @@ class RelationRepository {
       where: { id_subject: subjectId }
     });
   }
+
+  // 🔧 AGREGAR ESTE MÉTODO A TU relation.repository.js
+
+// Método mejorado para verificar si un profesor puede gestionar una asignatura
+async canTeacherManageSubject(teacherId, subjectId) {
+  const relation = await StudentsTeachersRelation.findOne({
+    where: {
+      id_teacher: teacherId,
+      id_subject: subjectId
+    }
+  });
+  
+  return !!relation; // Devuelve true si existe alguna relación
+}
+
+// Método para crear relación dummy si no existe
+async ensureTeacherSubjectRelation(teacherId, subjectId) {
+  // Verificar si ya existe alguna relación del profesor con esta asignatura
+  const existingRelation = await this.canTeacherManageSubject(teacherId, subjectId);
+  
+  if (!existingRelation) {
+    // Crear relación dummy
+    await this.create({
+      id_student: teacherId,  // Relación dummy
+      id_teacher: teacherId,
+      id_subject: subjectId
+    });
+    
+    console.log(`✅ Relación dummy creada: teacher=${teacherId}, subject=${subjectId}`);
+  }
+  
+  return true;
+}
 }
 
 module.exports = new RelationRepository();
