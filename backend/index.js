@@ -115,5 +115,5 @@ module.exports = {
    Role,
    Subject,
    Session,
-   StudentsTeachersRelation
+   StudentsTeachersRelation,
 };

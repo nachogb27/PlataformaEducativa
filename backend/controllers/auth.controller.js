@@ -83,6 +83,28 @@ class AuthController {
       res.status(500).json({ error: 'Error al cerrar sesión' });
     }
   }
+
+  async loginWithGoogle(req, res) {
+    try {
+      const { token } = req.body;
+      const result = await authService.loginWithGoogle(token);
+      res.json(result);
+    } catch (error) {
+      console.error('Error en loginWithGoogle:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  async loginWithGoogleCode(req, res) {
+    try {
+      const { code } = req.body;
+      const result = await authService.loginWithGoogleCode(code);
+      res.json(result);
+    } catch (error) {
+      console.error('Error en loginWithGoogleCode:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
 }
 
 module.exports = new AuthController();

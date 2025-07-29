@@ -11,6 +11,10 @@ router.get('/activate-account', authController.activateAccount);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
 
+// RUTAS DE GOOGLE OAUTH 
+router.post('/google', authController.loginWithGoogle);
+router.post('/google/code', authController.loginWithGoogleCode);
+
 // Rutas protegidas
 router.post('/logout', authenticateToken, authController.logout);
 

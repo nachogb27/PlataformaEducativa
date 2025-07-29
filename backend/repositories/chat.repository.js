@@ -48,6 +48,10 @@ class ChatRepository {
     const message = new Message(messageData);
     return await message.save();
   }
+
+  async findConversationById(conversationId) {
+    return await Conversation.findById(conversationId);
+  }
 }
 
 module.exports = new ChatRepository();

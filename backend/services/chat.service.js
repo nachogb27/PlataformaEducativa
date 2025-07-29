@@ -1,4 +1,3 @@
-const jwt = require('jsonwebtoken');
 const chatRepository = require('../repositories/chat.repository');
 const userRepository = require('../repositories/user.repository');
 const relationRepository = require('../repositories/relation.repository');
@@ -7,23 +6,10 @@ const fs = require('fs').promises;
 const path = require('path');
 
 class ChatService {
-  constructor() {
-    this.JWT_SECRET = process.env.JWT_SECRET;
-  }
-
-  // Decodificar token JWT para obtener información del usuario
-  decodeToken(token) {
+  // 🔧 FIX: Recibir userId directamente en lugar del token
+  async getAvailableUsers(userId) {
     try {
-      return jwt.verify(token, this.JWT_SECRET);
-    } catch (error) {
-      throw new Error('Token inválido');
-    }
-  }
-
-  async getAvailableUsers(token) {
-    try {
-      const decoded = this.decodeToken(token);
-      const user = await userRepository.findById(decoded.userId);
+      const user = await userRepository.findById(userId);
 
       if (!user) {
         throw new Error('Usuario no encontrado');
@@ -33,7 +19,7 @@ class ChatService {
 
       if (user.roleData.role_name === 'student') {
         // Estudiante: mostrar sus profesores
-        const relations = await relationRepository.findTeachersByStudent(decoded.userId);
+        const relations = await relationRepository.findTeachersByStudent(userId);
 
         availableUsers = relations.map(relation => ({
           userId: relation.teacher.id,
@@ -47,7 +33,7 @@ class ChatService {
 
       } else if (user.roleData.role_name === 'teacher') {
         // Profesor: mostrar sus estudiantes
-        const relations = await relationRepository.findStudentsByTeacher(decoded.userId);
+        const relations = await relationRepository.findStudentsByTeacher(userId);
 
         // Eliminar duplicados si un estudiante está en múltiples asignaturas
         const uniqueStudents = new Map();
@@ -75,13 +61,12 @@ class ChatService {
     }
   }
 
-  async getConversations(token) {
+  // 🔧 FIX: Recibir userId directamente
+  async getConversations(userId) {
     try {
-      const decoded = this.decodeToken(token);
-      
-      const conversations = await chatRepository.findConversationsByUserId(decoded.userId);
+      const conversations = await chatRepository.findConversationsByUserId(userId);
 
-      console.log(`📋 ✅ Conversaciones encontradas para usuario ${decoded.userId}: ${conversations.length}`);
+      console.log(`📋 ✅ Conversaciones encontradas para usuario ${userId}: ${conversations.length}`);
       
       return conversations;
     } catch (error) {
@@ -90,13 +75,13 @@ class ChatService {
     }
   }
 
-  async saveConversation(token, data) {
+  // 🔧 FIX: Recibir userId directamente
+  async saveConversation(userId, data) {
     try {
-      const decoded = this.decodeToken(token);
       const { participantId, messages = [] } = data;
 
       // Obtener datos de usuarios
-      const currentUser = await userRepository.findById(decoded.userId);
+      const currentUser = await userRepository.findById(userId);
       const otherUser = await userRepository.findById(participantId);
 
       if (!currentUser || !otherUser) {
@@ -104,7 +89,7 @@ class ChatService {
       }
 
       // Buscar o crear conversación
-      let conversation = await chatRepository.findConversationBetween(decoded.userId, participantId);
+      let conversation = await chatRepository.findConversationBetween(userId, participantId);
       if (!conversation) {
         conversation = await chatRepository.createConversation([
           {
@@ -128,7 +113,7 @@ class ChatService {
       // Guardar solo mensajes NO GUARDADOS
       if (messages.length > 0) {
         // Obtener IDs de mensajes ya guardados
-        const existingMessages = await chatRepository.findExistingMessages(decoded.userId, participantId);
+        const existingMessages = await chatRepository.findExistingMessages(userId, participantId);
         const existingMessageIds = new Set(existingMessages.map(m => m.messageId));
         const existingTimestamps = new Set(existingMessages.map(m => m.timestamp.getTime()));
 
@@ -149,15 +134,15 @@ class ChatService {
               timestamp: timestamp,
               sender: {
                 userId: msg.from,
-                username: msg.from === decoded.userId ? currentUser.username : otherUser.username,
-                role: msg.from === decoded.userId ? currentUser.roleData.role_name : otherUser.roleData.role_name,
-                name: msg.from === decoded.userId ? `${currentUser.name} ${currentUser.surnames}` : `${otherUser.name} ${otherUser.surnames}`
+                username: msg.from === userId ? currentUser.username : otherUser.username,
+                role: msg.from === userId ? currentUser.roleData.role_name : otherUser.roleData.role_name,
+                name: msg.from === userId ? `${currentUser.name} ${currentUser.surnames}` : `${otherUser.name} ${otherUser.surnames}`
               },
               receiver: {
                 userId: msg.to,
-                username: msg.to === decoded.userId ? currentUser.username : otherUser.username,
-                role: msg.to === decoded.userId ? currentUser.roleData.role_name : otherUser.roleData.role_name,
-                name: msg.to === decoded.userId ? `${currentUser.name} ${currentUser.surnames}` : `${otherUser.name} ${otherUser.surnames}`
+                username: msg.to === userId ? currentUser.username : otherUser.username,
+                role: msg.to === userId ? currentUser.roleData.role_name : otherUser.roleData.role_name,
+                name: msg.to === userId ? `${currentUser.name} ${currentUser.surnames}` : `${otherUser.name} ${otherUser.surnames}`
               }
             };
 
@@ -185,7 +170,7 @@ class ChatService {
             conversation._id,
             lastMessage.text || lastMessage.content,
             new Date(lastMessage.timestamp),
-            lastMessage.from === decoded.userId ? `${currentUser.name} ${currentUser.surnames}` : `${otherUser.name} ${otherUser.surnames}`
+            lastMessage.from === userId ? `${currentUser.name} ${currentUser.surnames}` : `${otherUser.name} ${otherUser.surnames}`
           );
         }
 
@@ -205,17 +190,16 @@ class ChatService {
     }
   }
 
-  async downloadConversation(token, conversationId, res) {
+  // 🔧 FIX: Recibir userId directamente
+  async downloadConversation(userId, conversationId, res) {
     try {
-      const decoded = this.decodeToken(token);
-
       // Verificar que el usuario tiene acceso a la conversación
       const conversation = await chatRepository.findConversationById(conversationId);
       if (!conversation) {
         throw new Error('Conversación no encontrada');
       }
 
-      const isParticipant = conversation.participants.some(p => p.userId === decoded.userId);
+      const isParticipant = conversation.participants.some(p => p.userId === userId);
       if (!isParticipant) {
         throw new Error('No tienes acceso a esta conversación');
       }
@@ -237,7 +221,7 @@ class ChatService {
       // Configurar el escritor CSV
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const participantName = conversation.participants
-        .find(p => p.userId !== decoded.userId)?.name || 'Unknown';
+        .find(p => p.userId !== userId)?.name || 'Unknown';
       const filename = `chat_${participantName.replace(/\s+/g, '_')}_${timestamp}.csv`;
       const filepath = require('path').join(downloadsDir, filename);
 
