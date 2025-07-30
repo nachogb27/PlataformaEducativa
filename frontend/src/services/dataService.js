@@ -51,10 +51,41 @@ const dataService = {
     }
   },
 
+    async editStudent(studentId, studentData) {
+    try {
+      console.log('📝 Editando estudiante:', { studentId, studentData });
+      
+      const response = await fetch(`${API_URL}/teacher/students/${studentId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${authService.getToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: studentData.name,
+          surnames: studentData.surnames,
+          email: studentData.email
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Error al editar estudiante');
+      }
+
+      const result = await response.json();
+      console.log('✅ Estudiante editado exitosamente:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error en editStudent:', error);
+      throw error;
+    }
+  },
+
   // Eliminar estudiante (profesor)
   async deleteStudent(studentId) {
     try {
-      const response = await fetch(`${API_URL}/teacher/student/${studentId}`, {
+      const response = await fetch(`${API_URL}/teacher/students/${studentId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${authService.getToken()}`,

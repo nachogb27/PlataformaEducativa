@@ -177,6 +177,16 @@
                 <td>
                   <div class="action-buttons">
                     <button 
+                      @click="editStudent(student)" 
+                      class="action-button edit-button"
+                      :title="$t('TeacherDashboard.editStudent')"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M18.5 2.50023C18.8978 2.1024 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.1024 21.5 2.50023C21.8978 2.89805 22.1213 3.43762 22.1213 4.00023C22.1213 4.56284 21.8978 5.1024 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button 
                       @click="deleteStudent(student)" 
                       class="action-button delete-button"
                       :title="$t('TeacherDashboard.deleteStudent')"
@@ -256,6 +266,7 @@
               id="editName" 
               v-model="editingStudent.name"
               required
+              autocomplete="given-name"
             />
           </div>
           
@@ -266,6 +277,18 @@
               id="editSurnames" 
               v-model="editingStudent.surnames"
               required
+              autocomplete="family-name"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="editEmail">{{ $t('TeacherDashboard.email') }}:</label>
+            <input 
+              type="email" 
+              id="editEmail" 
+              v-model="editingStudent.email"
+              required
+              autocomplete="email"
             />
           </div>
           
@@ -307,7 +330,8 @@ export default {
       editingStudent: {
         id: null,
         name: '',
-        surnames: ''
+        surnames: '',
+        email: ''
       },
       editError: '',
       saving: false,
@@ -620,14 +644,43 @@ export default {
       }
     },
 
+    // Método para abrir el modal de edición
+    editStudent(student) {
+      this.log('✏️ Editando estudiante:', student)
+      this.editingStudent = {
+        id: student.id,
+        name: student.name,
+        surnames: student.lastName,
+        email: student.email
+      }
+      this.showEditModal = true
+      this.editError = ''
+    },
+
+    // Método para cerrar el modal de edición
+    closeEditModal() {
+      this.showEditModal = false
+      this.editingStudent = {
+        id: null,
+        name: '',
+        surnames: '',
+        email: ''
+      }
+      this.editError = ''
+    },
+
     // Método para guardar cambios de estudiante (edición)
     async saveStudent() {
       this.editError = '';
       this.saving = true;
+      
       try {
+        this.log('💾 Guardando cambios del estudiante:', this.editingStudent)
+        
         await dataService.editStudent(this.editingStudent.id, {
           name: this.editingStudent.name,
-          surnames: this.editingStudent.surnames
+          surnames: this.editingStudent.surnames,
+          email: this.editingStudent.email
         });
 
         // Actualizar la lista local
@@ -635,10 +688,17 @@ export default {
         if (studentIndex !== -1) {
           this.students[studentIndex].name = this.editingStudent.name;
           this.students[studentIndex].lastName = this.editingStudent.surnames;
+          this.students[studentIndex].email = this.editingStudent.email;
         }
 
+        this.log('✅ Estudiante actualizado correctamente')
         this.closeEditModal();
+        
+        // Mostrar mensaje de éxito
+        alert('Estudiante actualizado correctamente');
+        
       } catch (error) {
+        this.log('❌ Error guardando estudiante:', error)
         this.editError = error.message || 'Error al guardar los cambios';
       } finally {
         this.saving = false;
@@ -648,13 +708,16 @@ export default {
     async deleteStudent(student) {
       if (confirm(`¿Estás seguro de que deseas eliminar a ${student.name} ${student.lastName} de tu lista?`)) {
         try {
+          this.log('🗑️ Eliminando estudiante:', student)
           await dataService.deleteStudent(student.id)
           
           // Eliminar de la lista local
           this.students = this.students.filter(s => s.id !== student.id)
           
+          this.log('✅ Estudiante eliminado correctamente')
           alert(`${student.name} ${student.lastName} ha sido eliminado de tu lista`)
         } catch (error) {
+          this.log('❌ Error eliminando estudiante:', error)
           alert('Error al eliminar el estudiante: ' + error.message)
         }
       }
@@ -1093,6 +1156,16 @@ export default {
   position: relative;
 }
 
+.edit-button {
+  background: linear-gradient(135deg, #4299e1, #3182ce);
+  color: white;
+}
+
+.edit-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+}
+
 .delete-button {
   background: linear-gradient(135deg, #f56565, #e53e3e);
   color: white;
@@ -1445,5 +1518,3 @@ export default {
   }
 }
 </style>
-
-

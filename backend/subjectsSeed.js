@@ -10,7 +10,6 @@ async function createSubjects() {
   try {
     await sequelize.sync();
 
-    // Insertar subjects ESPECIFICANDO LOS IDs para mantener el orden
     await Subject.bulkCreate([
       { id: 1, subject_name: 'Inglés' },
       { id: 2, subject_name: 'Lengua Castellana' },

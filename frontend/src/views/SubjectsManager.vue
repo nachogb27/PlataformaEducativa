@@ -176,7 +176,7 @@
               type="text" 
               id="subjectName" 
               v-model="subjectForm.name"
-              :placeholder="$t('SubjectsManager.subjectPlaceholder')"
+              :placeholder=
               required
               maxlength="100"
             />

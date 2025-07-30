@@ -35,5 +35,7 @@
   "assignedStudents": "Estudiantes Asignados",
   "noAssignedStudents": "No hay estudiantes asignados a esta asignatura",
   "availableStudents": "Estudiantes Disponibles",
-  "noAvailableStudents": "No hay estudiantes disponibles para asignar"
+  "noAvailableStudents": "No hay estudiantes disponibles para asignar",
+  "create": "Crear Asignatura"
+  
 }
