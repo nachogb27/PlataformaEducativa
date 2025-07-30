@@ -36,6 +36,8 @@
   "noAssignedStudents": "No students assigned to this subject",
   "availableStudents": "Available Students",
   "noAvailableStudents": "No students available to assign",
-  "create": "Create Subject"
+  "create": "Create Subject",
+  "assignedByTeachers": "Will be assigned by the teacher",
+  "enrolled": "Enrolled"
   
 }

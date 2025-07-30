@@ -141,15 +141,12 @@
           <div v-for="subject in subjects" :key="subject.id" class="subject-card student-card">
             <div class="card-header">
               <h3>{{ subject.name }}</h3>
-              <span class="status-badge enrolled">Cursando</span>
+              <span class="status-badge enrolled">{{ $t('SubjectsManager.enrolled') }}:</span>
             </div>
             <div class="card-content">
               <div class="teacher-info">
                 <span class="label">{{ $t('SubjectsManager.teacher') }}:</span>
                 <span class="teacher-name">{{ subject.teacher }}</span>
-              </div>
-              <div class="subject-details">
-                <span class="enrollment-date">{{ $t('SubjectsManager.enrolledSince') }}: {{ formatDate(subject.enrollmentDate) }}</span>
               </div>
             </div>
           </div>
