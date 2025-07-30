@@ -1,17 +1,24 @@
-// middleware/auth.js
+// 🔧 IMPORTACIÓN CORREGIDA: Usar ruta relativa correcta
 const jwt = require('jsonwebtoken');
-const { User, Role } = require('../index');
+const { User, Role } = require('../models/index'); 
 
 const authenticateToken = async (req, res, next) => {
   try {
+    console.log('🔐 Middleware authenticateToken ejecutándose...');
+    
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
+    console.log('📋 Auth header:', authHeader ? 'Presente' : 'Ausente');
+    console.log('🎫 Token extraído:', token ? 'Presente' : 'Ausente');
+
     if (!token) {
+      console.log('❌ No se encontró token');
       return res.status(401).json({ error: 'Token de acceso requerido' });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('✅ Token decodificado:', decoded);
     
     const user = await User.findByPk(decoded.userId, {
       include: [{
@@ -21,15 +28,19 @@ const authenticateToken = async (req, res, next) => {
     });
 
     if (!user) {
+      console.log('❌ Usuario no encontrado');
       return res.status(401).json({ error: 'Usuario no encontrado' });
     }
 
     if (user.active !== 1) {
+      console.log('❌ Cuenta no activada');
       return res.status(403).json({ error: 'Cuenta no activada' });
     }
 
+
     req.user = {
       id: user.id,
+      userId: user.id, 
       username: user.username,
       name: user.name,
       surnames: user.surnames,
@@ -38,9 +49,15 @@ const authenticateToken = async (req, res, next) => {
       avatar: user.avatar
     };
 
+    console.log('👤 req.user configurado:', {
+      id: req.user.id,
+      userId: req.user.userId,
+      role: req.user.role
+    });
+
     next();
   } catch (error) {
-    console.error('Error en autenticación:', error);
+    console.error('❌ Error en autenticación:', error);
     
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ error: 'Token inválido' });

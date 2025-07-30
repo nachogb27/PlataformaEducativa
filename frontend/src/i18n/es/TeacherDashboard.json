@@ -44,7 +44,8 @@
   "profile" : "Mi perfil",
   "chat": "Chat",
   "logout": "Cerrar sesión",
-  "paginationInfo": "Mostrando {start} - {end} de {total} estudiantes"
+  "paginationInfo": "Mostrando {start} - {end} de {total} estudiantes",
+  "email": "Email"
 
 
 }
