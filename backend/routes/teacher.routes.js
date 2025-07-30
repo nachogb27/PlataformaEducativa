@@ -11,9 +11,6 @@ router.use(authenticateToken);
 router.get('/students', teacherController.getStudents);
 router.get('/subjects', teacherController.getSubjects);
 
-// 🔧 RUTAS CON PARÁMETROS - CAMBIO IMPORTANTE: 
-// Cambiamos de '/subjects/:subjectId/...' a '/subject/:subjectId/...' (singular)
-// para coincidir con lo que el frontend está enviando
 
 // Obtener estudiantes asignados a una asignatura específica
 router.get('/subject/:subjectId/students', teacherController.getAssignedStudents);

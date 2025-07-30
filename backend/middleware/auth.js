@@ -1,6 +1,6 @@
 // 🔧 IMPORTACIÓN CORREGIDA: Usar ruta relativa correcta
 const jwt = require('jsonwebtoken');
-const { User, Role } = require('../models/index'); // Cambié de ../index a ../models/index
+const { User, Role } = require('../models/index'); 
 
 const authenticateToken = async (req, res, next) => {
   try {
@@ -37,10 +37,10 @@ const authenticateToken = async (req, res, next) => {
       return res.status(403).json({ error: 'Cuenta no activada' });
     }
 
-    // 🔧 ARREGLO: Configurar tanto 'id' como 'userId' para compatibilidad
+
     req.user = {
       id: user.id,
-      userId: user.id, // ← Para compatibilidad con el controller
+      userId: user.id, 
       username: user.username,
       name: user.name,
       surnames: user.surnames,

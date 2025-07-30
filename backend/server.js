@@ -129,7 +129,7 @@ const server = app.listen(PORT, () => {
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
 });
 
-// === INTEGRACIÓN WEBSOCKET CHAT SIN GUARDADO AUTOMÁTICO ===
+// === INTEGRACIÓN WEBSOCKET CHAT ===
 const wss = new WebSocket.Server({ server });
 const clients = new Map(); // userId -> websocket
 
