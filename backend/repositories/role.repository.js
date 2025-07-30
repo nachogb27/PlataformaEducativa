@@ -14,6 +14,6 @@ class RoleRepository {
   async findAll() {
     return await Role.findAll();
   }
-}
+} 
 
 module.exports = new RoleRepository();
