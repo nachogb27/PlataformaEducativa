@@ -66,7 +66,7 @@ class UserRepository {
 
   async findStudentsByRole() {
     return await User.findAll({
-      where: { role: 1 }, // Estudiantes
+      where: { role: 1 }, 
       attributes: ['id', 'name', 'surnames', 'email', 'avatar'],
       order: [['name', 'ASC'], ['surnames', 'ASC']]
     });
@@ -74,7 +74,7 @@ class UserRepository {
 
   async findTeachersByRole() {
     return await User.findAll({
-      where: { role: 2 }, // Profesores
+      where: { role: 2 }, 
       attributes: ['id', 'name', 'surnames', 'email', 'avatar'],
       order: [['name', 'ASC'], ['surnames', 'ASC']]
     });

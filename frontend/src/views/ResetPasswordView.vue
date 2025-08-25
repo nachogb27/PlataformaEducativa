@@ -114,7 +114,6 @@ export default {
     }
   },
   mounted() {
-    // Obtener token de la URL
     this.token = this.$route.query.token;
     if (!this.token) {
       this.errorMessage = this.$t('ResetPasswordView.invalid');
@@ -148,7 +147,6 @@ export default {
       this.confirmError = '';
       this.errorMessage = '';
       
-      // Validaciones
       if (!this.isPasswordValid) {
         this.passwordError = this.$t('ResetPasswordView.invalid');
         return;
@@ -177,7 +175,6 @@ export default {
         const data = await response.json();
         
         if (response.ok) {
-          // Redirigir al login con mensaje de éxito
           this.$router.push({ 
             name: 'Login', 
             query: { message: 'Contraseña actualizada exitosamente' }

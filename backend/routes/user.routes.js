@@ -5,7 +5,6 @@ const { uploadToS3 } = require('../config/aws');
 
 const router = express.Router();
 
-// Todas las rutas requieren autenticación
 router.use(authenticateToken);
 
 router.get('/', userController.getProfile);

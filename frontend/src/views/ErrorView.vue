@@ -154,7 +154,6 @@ export default {
     },
     
     retry() {
-      // Recargar la página actual
       window.location.reload();
     },
     
@@ -163,7 +162,6 @@ export default {
     },
     
     reportError() {
-      // Aquí podrías implementar un sistema de reporte de errores
       const errorInfo = {
         code: this.errorCode,
         message: this.errorMessage,

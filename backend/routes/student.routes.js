@@ -5,7 +5,6 @@ const { validateStudentRole } = require('../middleware/roleValidation');
 
 const router = express.Router();
 
-// Todas las rutas requieren autenticación y rol de estudiante
 router.use(authenticateToken);
 router.use(validateStudentRole);
 

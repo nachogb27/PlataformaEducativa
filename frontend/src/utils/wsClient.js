@@ -1,6 +1,3 @@
-// Simple WebSocket client for chat
-// Usage: import wsClient from '../utils/wsClient'
-
 class WSClient {
   constructor(url) {
     this.url = url

@@ -20,32 +20,26 @@ class AuthService {
  async login(credentials) {
   const { username, password } = credentials;
 
-  // Buscar usuario
   const user = await userRepository.findByUsername(username);
   if (!user) {
     throw new Error('Credenciales incorrectas');
   }
 
-  // Verificar cuenta activada
   if (user.active === 0) {
     throw new Error('La cuenta no está activada');
   }
 
-  // Verificar que el usuario tiene contraseña (no es usuario de Google)
   if (!user.password_token || user.password_token === '') {
     throw new Error('Esta cuenta fue creada con Google. Usa el botón de Google para iniciar sesión.');
   }
 
-  // Validar contraseña
   const isPasswordValid = bcrypt.compareSync(password, user.password_token);
   if (!isPasswordValid) {
     throw new Error('Credenciales incorrectas');
   }
 
-  // Crear sesión
   await sessionRepository.create(user.id);
 
-  // Generar JWT
   const token = jwt.sign(
     { userId: user.id, role: user.roleData.role_name },
     this.JWT_SECRET,
@@ -68,7 +62,6 @@ class AuthService {
 
   async loginWithGoogle(idToken) {
     try {
-      // Verificar token con Google
       const ticket = await this.client.verifyIdToken({
         idToken: idToken,
         audience: this.CLIENT_ID
@@ -79,20 +72,17 @@ class AuthService {
 
       console.log('✅ Token verificado - Usuario Google:', { sub, email, name });
 
-      // Buscar si el usuario ya existe por email
       let user = await userRepository.findByEmail(email);
 
       if (!user) {
         console.log('🆕 Usuario no existe, creando nuevo usuario...');
         
-        // Buscar rol de estudiante por defecto
         const studentRole = await roleRepository.findByName('student');
         
         if (!studentRole) {
           throw new Error('Error de configuración del sistema');
         }
 
-        // Crear nuevo usuario
         user = await userRepository.create({
           username: email.split('@')[0],
           name: name || email.split('@')[0],
@@ -104,19 +94,15 @@ class AuthService {
           access_token: uuidv4()
         });
 
-        // Recargar usuario con rol
         user = await userRepository.findById(user.id);
       } else {
-        // Verificar si la cuenta está activada
         if (user.active === 0) {
           await userRepository.update(user.id, { active: 1 });
         }
       }
 
-      // Crear sesión
       await sessionRepository.create(user.id);
 
-      // Generar JWT
       const token = jwt.sign(
         { userId: user.id, role: user.roleData.role_name },
         this.JWT_SECRET,
@@ -145,7 +131,6 @@ class AuthService {
 
   async loginWithGoogleCode(authCode) {
     try {
-      // Intercambiar código por tokens
       const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: {
@@ -168,7 +153,6 @@ class AuthService {
 
       const tokens = await tokenResponse.json();
 
-      // Usar el ID token para hacer login
       return await this.loginWithGoogle(tokens.id_token);
 
     } catch (error) {
@@ -180,7 +164,6 @@ class AuthService {
   async register(userData) {
     const { name, surnames, username, email, password, confirmPassword, role, teacherToken } = userData;
 
-    // Validaciones
     if (password !== confirmPassword) {
       throw new Error('Las contraseñas no coinciden');
     }
@@ -193,19 +176,16 @@ class AuthService {
       throw new Error('La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un número');
     }
 
-    // Verificar username único
     const existingUser = await userRepository.findByUsername(username);
     if (existingUser) {
       throw new Error('El nombre de usuario ya existe');
     }
 
-    // Verificar email único
     const existingEmail = await userRepository.findByEmail(email);
     if (existingEmail) {
       throw new Error('El email ya está registrado');
     }
 
-    // Verificar token de profesor
     const roleId = role === 'teacher' ? 2 : 1;
     if (roleId === 2) {
       if (!teacherToken || teacherToken !== this.TEACHER_TOKEN) {
@@ -213,10 +193,8 @@ class AuthService {
       }
     }
 
-    // Cifrar contraseña
     const hashedPassword = bcrypt.hashSync(password, this.SALT_ROUNDS);
 
-    // Crear usuario
     const newUser = await userRepository.create({
       name,
       surnames,
@@ -228,7 +206,6 @@ class AuthService {
       active: 0
     });
 
-    // Enviar email de activación
     await emailService.sendActivationEmail(email, name, newUser.access_token);
 
     return {
@@ -263,11 +240,9 @@ class AuthService {
       throw new Error('La cuenta no está activada');
     }
 
-    // Generar token de reset
     const resetToken = uuidv4();
     await userRepository.update(user.id, { password_token: resetToken });
 
-    // Enviar email
     await emailService.sendPasswordResetEmail(email, user.name, resetToken);
 
     return { message: 'Email de recuperación enviado exitosamente' };
@@ -287,7 +262,6 @@ class AuthService {
       throw new Error('Token inválido o expirado');
     }
 
-    // Cifrar nueva contraseña
     const hashedPassword = bcrypt.hashSync(newPassword, this.SALT_ROUNDS);
     await userRepository.update(user.id, { password_token: hashedPassword });
 

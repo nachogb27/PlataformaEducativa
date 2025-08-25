@@ -35,8 +35,6 @@
         </router-link>
       </div>
     </div>
-
-    <!-- Language Switcher -->
     <LanguageSwitcher />
   </div>
 </template>

@@ -124,7 +124,6 @@ export default {
       loading: true,
       error: null,
       loadingMessage: 'Cargando profesores...',
-      // Debug
       debugMode: false,
       debugInfo: {
         hasToken: false,
@@ -146,14 +145,12 @@ export default {
       console.log('🔄 Inicializando dashboard del estudiante...')
       
       try {
-        // Verificar autenticación
         if (!authService.isAuthenticated()) {
           console.log('❌ Usuario no autenticado, redirigiendo a login')
           this.$router.push('/login')
           return
         }
         
-        // Obtener información del usuario
         const user = authService.getUser()
         console.log('👤 Usuario actual:', user)
         
@@ -164,7 +161,6 @@ export default {
           loadingState: 'authenticated'
         }
         
-        // Verificar que es estudiante
         if (user?.role !== 'student') {
           console.log('❌ Usuario no es estudiante:', user?.role)
           this.error = 'Acceso denegado: Solo los estudiantes pueden acceder a esta página'
@@ -172,7 +168,6 @@ export default {
           return
         }
         
-        // Cargar profesores
         await this.loadTeachers()
         
       } catch (error) {
@@ -189,7 +184,6 @@ export default {
         
         console.log('🔄 Cargando profesores del estudiante...')
         
-        // Verificar token antes de hacer la petición
         const token = authService.getToken()
         if (!token) {
           throw new Error('Token de autenticación no disponible')
@@ -208,7 +202,6 @@ export default {
         this.error = error.message || 'Error desconocido al cargar profesores'
         this.debugInfo.loadingState = 'error'
         
-        // Si es un error de autenticación, redirigir al login
         if (error.message.includes('Token') || error.message.includes('401') || error.message.includes('jwt')) {
           console.log('🔄 Error de autenticación, limpiando sesión...')
           authService.logout()

@@ -1,4 +1,3 @@
-// 🔧 IMPORTACIÓN CORREGIDA: Usar ruta relativa correcta
 const jwt = require('jsonwebtoken');
 const { User, Role } = require('../models/index'); 
 

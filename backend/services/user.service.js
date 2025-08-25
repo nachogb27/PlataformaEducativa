@@ -37,7 +37,6 @@ class UserService {
       throw new Error('Usuario no encontrado');
     }
 
-    // Eliminar avatar anterior si existe
     if (user.avatar) {
       const oldAvatarKey = extractS3Key(user.avatar);
       if (oldAvatarKey) {
@@ -45,7 +44,6 @@ class UserService {
       }
     }
 
-    // La URL del nuevo avatar viene en file.location (multer-s3)
     const avatarUrl = file.location;
     await userRepository.update(userId, { avatar: avatarUrl });
 
@@ -65,13 +63,11 @@ class UserService {
       throw new Error('El usuario no tiene avatar');
     }
 
-    // Eliminar de S3
     const avatarKey = extractS3Key(user.avatar);
     if (avatarKey) {
       await deleteFromS3(avatarKey);
     }
 
-    // Eliminar referencia de la base de datos
     await userRepository.update(userId, { avatar: null });
 
     return { message: 'Avatar eliminado exitosamente' };

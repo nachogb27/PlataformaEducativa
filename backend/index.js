@@ -16,14 +16,12 @@ sequelize.authenticate().then(() => {
    console.error('Unable to connect to the database: ', error);
 });
 
-// Importar modelos pasándoles la instancia de sequelize
 const User = require('./models/user.model')(sequelize);
 const Role = require('./models/roles.model')(sequelize);
 const Subject = require('./models/subjects.model')(sequelize);
 const Session = require('./models/sessions.model')(sequelize);
 const StudentsTeachersRelation = require('./models/students_teachers_relation.model')(sequelize);
 
-// ✅ CONFIGURAR ASOCIACIONES DESPUÉS DE CARGAR TODOS LOS MODELOS
 console.log('⚙️ Configurando asociaciones...');
 
 // User - Role
@@ -108,7 +106,6 @@ sequelize.sync({ force: false }).then(() => {
    console.error('Unable to create tables: ', error);
 });
 
-// ✅ EXPORTAR MODELOS CON ASOCIACIONES YA CONFIGURADAS
 module.exports = {
    sequelize,
    User,

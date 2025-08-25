@@ -100,7 +100,7 @@ export default {
     },
     
     goBack() {
-      // Si hay historial, ir hacia atrás, sino ir al inicio
+
       if (window.history.length > 1) {
         this.$router.go(-1);
       } else {

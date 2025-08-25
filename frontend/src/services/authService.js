@@ -1,9 +1,6 @@
-// services/authService.js
-
 const API_URL = 'http://localhost:3000/api/auth';
-
 const authService = {
-  // Login del usuario
+
   async login(credentials) {
     try {
       const response = await fetch(`${API_URL}/login`, {
@@ -20,8 +17,7 @@ const authService = {
       }
 
       const data = await response.json();
-      
-      // Guardar token y datos del usuario en localStorage
+
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       
@@ -34,7 +30,6 @@ const authService = {
     }
   },
 
-  // Login con Google usando código de autorización
   async loginWithGoogleCode(authCode) {
     try {
       console.log('🔄 AuthService: Enviando código a backend')
@@ -56,7 +51,6 @@ const authService = {
       
       const data = await response.json()
       
-      // Guardar token si el login es exitoso
       if (data.token) {
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
@@ -70,7 +64,6 @@ const authService = {
     }
   },
 
-  // Login con Google ID Token (método original)
   async loginWithGoogle(idToken) {
     try {
       console.log('🔄 AuthService: Enviando token a:', `${API_URL}/auth/google`)
@@ -96,13 +89,11 @@ const authService = {
       
       const data = await response.json()
       console.log('✅ Datos recibidos del backend:', data)
-      
-      // Verificar que el backend devolvió un token JWT
+
       if (!data.token) {
         throw new Error('El servidor no devolvió un token válido')
       }
-      
-      // Guardar token y usuario como en el login normal
+
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
       
@@ -116,7 +107,6 @@ const authService = {
     }
   },
 
-  // Registro de usuario
   async register(userData) {
     try {
       const response = await fetch(`${API_URL}/register`, {
@@ -139,7 +129,6 @@ const authService = {
     }
   },
 
-  // Solicitud de recuperación de contraseña
   async forgotPassword(email) {
     try {
       const response = await fetch(`${API_URL}/forgot-password`, {
@@ -162,7 +151,6 @@ const authService = {
     }
   },
 
-  // Restablecer contraseña
   async resetPassword(token, newPassword, confirmPassword) {
     try {
       const response = await fetch(`${API_URL}/reset-password`, {
@@ -189,13 +177,12 @@ const authService = {
     }
   },
 
-  // Logout del usuario
   async logout() {
     try {
       const token = this.getToken();
       
       if (token) {
-        // Intentar cerrar sesión en el servidor
+
         await fetch(`${API_URL}/logout`, {
           method: 'POST',
           headers: {
@@ -206,16 +193,15 @@ const authService = {
       }
     } catch (error) {
       console.error('Error en logout del servidor:', error);
-      // Continúa con el logout local aunque falle en el servidor
+
     } finally {
-      // Limpiar localStorage
+
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       console.log('✅ Logout completado - Token eliminado');
     }
   },
 
-  // Obtener el token del localStorage
   getToken() {
     try {
       const token = localStorage.getItem('token');
@@ -225,11 +211,10 @@ const authService = {
         return null;
       }
 
-      // Verificar que el token tenga el formato correcto (JWT)
       const parts = token.split('.');
       if (parts.length !== 3) {
         console.error('❌ Token mal formado, limpiando localStorage');
-        this.logout(); // Limpiar token corrupto
+        this.logout(); 
         return null;
       }
 
@@ -237,12 +222,11 @@ const authService = {
       return token;
     } catch (error) {
       console.error('❌ Error obteniendo token:', error);
-      this.logout(); // Limpiar en caso de error
+      this.logout(); 
       return null;
     }
   },
 
-  // Obtener los datos del usuario del localStorage
   getUser() {
     try {
       const userData = localStorage.getItem('user');
@@ -262,7 +246,6 @@ const authService = {
     }
   },
 
-  // Verificar si el usuario está autenticado
   isAuthenticated() {
     const token = this.getToken();
     const isAuth = !!token;
@@ -270,13 +253,11 @@ const authService = {
     return isAuth;
   },
 
-  // Obtener el rol del usuario
   getUserRole() {
     const user = this.getUser();
     return user ? user.role : null;
   },
 
-  // Verificar si el token ha expirado (básico)
   isTokenExpired() {
     const token = this.getToken();
     if (!token) return true;
@@ -287,7 +268,7 @@ const authService = {
       
       if (payload.exp && payload.exp < now) {
         console.log('⏰ Token expirado');
-        this.logout(); // Logout automático si el token expiró
+        this.logout(); 
         return true;
       }
       
@@ -298,7 +279,6 @@ const authService = {
     }
   },
 
-  // Actualizar datos del usuario en localStorage
   updateUser(userData) {
     try {
       localStorage.setItem('user', JSON.stringify(userData));
@@ -323,14 +303,12 @@ const authService = {
     }
   },
 
-  // Limpiar completamente la autenticación (útil para debugging)
   clearAuth() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     console.log('🧹 Autenticación limpiada completamente');
   },
-
-  // Debug: Mostrar información del token
+  
   debugToken() {
     const token = localStorage.getItem('token');
     console.log('🔍 DEBUG TOKEN:');

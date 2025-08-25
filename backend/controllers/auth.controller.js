@@ -21,7 +21,6 @@ class AuthController {
       console.error('Error name:', error.name);
       console.error('=== FIN ERROR ===');
       
-      // Asegurar que siempre devolvamos JSON
       if (!res.headersSent) {
         res.status(401).json({ 
           error: error.message || 'Error de autenticación',

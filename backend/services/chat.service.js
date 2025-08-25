@@ -6,7 +6,6 @@ const fs = require('fs').promises;
 const path = require('path');
 
 class ChatService {
-  // 🔧 FIX: Recibir userId directamente en lugar del token
   async getAvailableUsers(userId) {
     try {
       const user = await userRepository.findById(userId);
@@ -18,7 +17,6 @@ class ChatService {
       let availableUsers = [];
 
       if (user.roleData.role_name === 'student') {
-        // Estudiante: mostrar sus profesores
         const relations = await relationRepository.findTeachersByStudent(userId);
 
         availableUsers = relations.map(relation => ({
@@ -32,10 +30,8 @@ class ChatService {
         }));
 
       } else if (user.roleData.role_name === 'teacher') {
-        // Profesor: mostrar sus estudiantes
         const relations = await relationRepository.findStudentsByTeacher(userId);
 
-        // Eliminar duplicados si un estudiante está en múltiples asignaturas
         const uniqueStudents = new Map();
         relations.forEach(relation => {
           uniqueStudents.set(relation.student.id, {
@@ -61,7 +57,6 @@ class ChatService {
     }
   }
 
-  // 🔧 FIX: Recibir userId directamente
   async getConversations(userId) {
     try {
       const conversations = await chatRepository.findConversationsByUserId(userId);
@@ -75,12 +70,10 @@ class ChatService {
     }
   }
 
-  // 🔧 FIX: Recibir userId directamente
   async saveConversation(userId, data) {
     try {
       const { participantId, messages = [] } = data;
 
-      // Obtener datos de usuarios
       const currentUser = await userRepository.findById(userId);
       const otherUser = await userRepository.findById(participantId);
 
@@ -88,7 +81,6 @@ class ChatService {
         throw new Error('Usuario no encontrado');
       }
 
-      // Buscar o crear conversación
       let conversation = await chatRepository.findConversationBetween(userId, participantId);
       if (!conversation) {
         conversation = await chatRepository.createConversation([
@@ -110,9 +102,7 @@ class ChatService {
       let newMessagesCount = 0;
       let duplicateCount = 0;
 
-      // Guardar solo mensajes NO GUARDADOS
       if (messages.length > 0) {
-        // Obtener IDs de mensajes ya guardados
         const existingMessages = await chatRepository.findExistingMessages(userId, participantId);
         const existingMessageIds = new Set(existingMessages.map(m => m.messageId));
         const existingTimestamps = new Set(existingMessages.map(m => m.timestamp.getTime()));
@@ -122,7 +112,6 @@ class ChatService {
             const messageId = msg.messageId || `msg_${msg.from}_${msg.to}_${new Date(msg.timestamp).getTime()}_${Math.random().toString(36).substr(2, 9)}`;
             const timestamp = new Date(msg.timestamp);
             
-            // Verificar duplicados por ID Y timestamp
             if (existingMessageIds.has(messageId) || existingTimestamps.has(timestamp.getTime())) {
               duplicateCount++;
               continue;
@@ -146,16 +135,14 @@ class ChatService {
               }
             };
 
-            // Guardar mensaje
             await chatRepository.saveMessage(messageData);
             newMessagesCount++;
             
-            // Añadir a sets para evitar duplicados en la misma sesión
             existingMessageIds.add(messageId);
             existingTimestamps.add(timestamp.getTime());
             
           } catch (error) {
-            if (error.code === 11000) { // Duplicado en DB
+            if (error.code === 11000) { 
               duplicateCount++;
             } else {
               throw error;
@@ -163,7 +150,6 @@ class ChatService {
           }
         }
 
-        // Actualizar conversación si hay mensajes nuevos
         if (newMessagesCount > 0) {
           const lastMessage = messages[messages.length - 1];
           await chatRepository.updateLastActivity(
@@ -190,10 +176,8 @@ class ChatService {
     }
   }
 
-  // 🔧 FIX: Recibir userId directamente
   async downloadConversation(userId, conversationId, res) {
     try {
-      // Verificar que el usuario tiene acceso a la conversación
       const conversation = await chatRepository.findConversationById(conversationId);
       if (!conversation) {
         throw new Error('Conversación no encontrada');
@@ -204,7 +188,6 @@ class ChatService {
         throw new Error('No tienes acceso a esta conversación');
       }
 
-      // Obtener todos los mensajes de la conversación
       const participantIds = conversation.participants.map(p => p.userId);
       const messages = await chatRepository.findMessagesBetween(participantIds[0], participantIds[1]);
 
@@ -212,13 +195,11 @@ class ChatService {
         throw new Error('No hay mensajes en esta conversación');
       }
 
-      // Crear directorio de descargas si no existe
       const downloadsDir = './downloads';
       if (!require('fs').existsSync(downloadsDir)) {
         require('fs').mkdirSync(downloadsDir, { recursive: true });
       }
 
-      // Configurar el escritor CSV
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const participantName = conversation.participants
         .find(p => p.userId !== userId)?.name || 'Unknown';
@@ -237,7 +218,6 @@ class ChatService {
         ]
       });
 
-      // Preparar datos para CSV
       const csvData = messages.map(msg => ({
         timestamp: new Date(msg.timestamp).toLocaleString('es-ES'),
         senderName: msg.sender.name,
@@ -247,19 +227,16 @@ class ChatService {
         content: msg.content
       }));
 
-      // Escribir archivo CSV
       await csvWriter.writeRecords(csvData);
 
       console.log(`📥 ✅ Archivo CSV creado: ${filename} con ${csvData.length} mensajes`);
 
-      // Enviar archivo para descarga
       res.download(filepath, filename, (err) => {
         if (err) {
           console.error('Error enviando archivo:', err);
           res.status(500).json({ error: 'Error enviando archivo' });
         }
         
-        // Limpiar archivo temporal después de un tiempo
         setTimeout(() => {
           require('fs').unlink(filepath, (cleanupError) => {
             if (cleanupError) {
@@ -268,7 +245,7 @@ class ChatService {
               console.log(`🗑️ Archivo temporal eliminado: ${filename}`);
             }
           });
-        }, 60000); // 1 minuto
+        }, 60000); 
       });
 
     } catch (error) {
@@ -280,12 +257,10 @@ class ChatService {
   buildAvatarUrl(avatarPath) {
     if (!avatarPath) return null;
     
-    // Si ya es una URL completa (S3), devolverla tal como está
     if (avatarPath.startsWith('http')) {
       return avatarPath;
     }
     
-    // Si es un path local, construir URL completa
     return `http://localhost:3000/uploads/avatars/${avatarPath}`;
   }
 }

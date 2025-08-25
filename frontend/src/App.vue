@@ -31,7 +31,6 @@ body {
   line-height: 1.6;
 }
 
-/* Scrollbar personalizada */
 ::-webkit-scrollbar {
   width: 8px;
 }
