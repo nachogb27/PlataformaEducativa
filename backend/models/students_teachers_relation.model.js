@@ -16,7 +16,6 @@ module.exports = (sequelize) => {
         key: 'id',       
       },
       validate: {
-        // 🔧 VALIDACIÓN CORREGIDA PARA PERMITIR RELACIONES DUMMY DE PROFESORES
         async isValidStudent(value) {
           const User = sequelize.models.users;
           const user = await User.findByPk(value);
@@ -24,17 +23,14 @@ module.exports = (sequelize) => {
             throw new Error('El usuario estudiante no existe');
           }
           
-          // ✅ PERMITIR ESTUDIANTES NORMALES (role = 1)
           if (user.role === 1) {
-            return; // Válido
+            return;
           }
           
-          // ✅ PERMITIR PROFESORES EN RELACIONES DUMMY (role = 2 Y id_student = id_teacher)
           if (user.role === 2 && value === this.id_teacher) {
-            return; // Válido - es una relación dummy donde el profesor se asigna a sí mismo
+            return;
           }
           
-          // ❌ RECHAZAR CUALQUIER OTRO CASO
           throw new Error('El usuario debe tener rol de estudiante (role = 1) o ser una relación dummy de profesor');
         }
       }
@@ -77,12 +73,10 @@ module.exports = (sequelize) => {
     ]
   });
 
-  // 🔧 MÉTODOS ESTÁTICOS MEJORADOS PARA EXCLUIR RELACIONES DUMMY
   StudentsTeachersRelation.getStudentsByTeacher = async function(teacherId) {
     return await this.findAll({
       where: {
         id_teacher: teacherId,
-        // 🔧 EXCLUIR RELACIONES DUMMY (donde id_student = id_teacher)
         id_student: {
           [Op.ne]: teacherId
         }
@@ -98,7 +92,6 @@ module.exports = (sequelize) => {
     });
   };
 
-  // 🆕 MÉTODO PARA OBTENER ASIGNATURAS QUE DA UN PROFESOR (INCLUYENDO RELACIONES DUMMY)
   StudentsTeachersRelation.getSubjectsByTeacher = async function(teacherId) {
     return await this.findAll({
       where: {
@@ -107,12 +100,10 @@ module.exports = (sequelize) => {
     });
   };
 
-  // 🆕 MÉTODO PARA CREAR RELACIÓN DUMMY DE PROFESOR
   StudentsTeachersRelation.createTeacherSubjectRelation = async function(teacherId, subjectId) {
     const User = sequelize.models.users;
     const Subject = sequelize.models.subjects;
     
-    // Verificar que el profesor existe y tiene rol correcto
     const teacher = await User.findByPk(teacherId);
     if (!teacher) {
       throw new Error('El profesor no existe');
@@ -121,26 +112,22 @@ module.exports = (sequelize) => {
       throw new Error('El usuario debe ser un profesor (role = 2)');
     }
     
-    // Verificar que la asignatura existe
     const subject = await Subject.findByPk(subjectId);
     if (!subject) {
       throw new Error('La asignatura no existe');
     }
     
-    // Crear relación dummy (id_student = id_teacher)
     return await this.create({
-      id_student: teacherId,  // 🔧 Mismo ID para crear relación dummy
+      id_student: teacherId, 
       id_teacher: teacherId,
       id_subject: subjectId
     });
   };
 
   StudentsTeachersRelation.assignTeacherToStudent = async function(studentId, teacherId, subjectId) {
-    // Validaciones adicionales antes de crear
     const User = sequelize.models.users;
     const Subject = sequelize.models.subjects;
     
-    // Verificar que el estudiante existe y tiene rol correcto
     const student = await User.findByPk(studentId);
     if (!student) {
       throw new Error('El estudiante no existe');
@@ -149,7 +136,6 @@ module.exports = (sequelize) => {
       throw new Error('El usuario debe ser un estudiante (role = 1)');
     }
     
-    // Verificar que el profesor existe y tiene rol correcto
     const teacher = await User.findByPk(teacherId);
     if (!teacher) {
       throw new Error('El profesor no existe');
@@ -158,13 +144,11 @@ module.exports = (sequelize) => {
       throw new Error('El usuario debe ser un profesor (role = 2)');
     }
     
-    // Verificar que la asignatura existe
     const subject = await Subject.findByPk(subjectId);
     if (!subject) {
       throw new Error('La asignatura no existe');
     }
     
-    // Si todo es correcto, crear la relación
     return await this.create({
       id_student: studentId,
       id_teacher: teacherId,
