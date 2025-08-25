@@ -1,12 +1,10 @@
-// models/chatModels.js
 const mongoose = require('mongoose');
 
-// Esquema para mensajes individuales
 const MessageSchema = new mongoose.Schema({
   messageId: {
     type: String,
     required: true,
-    unique: true  // Garantiza que no haya duplicados
+    unique: true  
   },
   content: {
     type: String,
@@ -67,7 +65,6 @@ const MessageSchema = new mongoose.Schema({
   }
 });
 
-// Esquema para conversaciones/chats
 const ConversationSchema = new mongoose.Schema({
   participants: [{
     userId: {
@@ -121,7 +118,6 @@ const ConversationSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Índices para optimizar consultas
 ConversationSchema.index({ 'participants.userId': 1 });
 ConversationSchema.index({ createdAt: -1 });
 ConversationSchema.index({ updatedAt: -1 });
@@ -129,7 +125,6 @@ ConversationSchema.index({ updatedAt: -1 });
 MessageSchema.index({ 'sender.userId': 1, 'receiver.userId': 1 });
 MessageSchema.index({ timestamp: -1 });
 
-// Método para encontrar conversación entre dos usuarios
 ConversationSchema.statics.findConversationBetween = async function(userId1, userId2) {
   return await this.findOne({
     $and: [
@@ -139,7 +134,6 @@ ConversationSchema.statics.findConversationBetween = async function(userId1, use
   }).sort({ updatedAt: -1 });
 };
 
-// Método para actualizar última actividad
 ConversationSchema.methods.updateLastActivity = async function(messageData) {
   this.lastMessage = {
     content: messageData.content,
