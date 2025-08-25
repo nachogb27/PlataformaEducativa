@@ -48,13 +48,11 @@
         </button>
       </form>
 
-      <!-- Google Sign-In con método de redirección -->
       <div class="google-signin-container">
         <div class="divider">
           <span>{{ $t('LoginView.orContinueWith') }}</span>
         </div>
-        
-        <!-- Botón personalizado para redirección -->
+
         <button 
           @click="redirectToGoogle"
           class="google-signin-redirect"
@@ -69,8 +67,7 @@
           </svg>
           {{ $t('LoginView.google') }}
         </button>
-        
-        <!-- Botón original oculto para comparar -->
+
         <div style="display: none;">
           <g-signin-button
             :params="googleSignInParams"
@@ -130,7 +127,6 @@ export default {
       this.redirectToDashboard()
     }
 
-    // Verificar si venimos de Google OAuth redirect
     this.handleGoogleCallback()
   },
   methods: {
@@ -181,7 +177,6 @@ export default {
       }
     },
 
-    // Método de redirección directa a Google (sin popup)
     redirectToGoogle() {
       console.log('🚀 Redirigiendo a Google OAuth...')
 
@@ -191,7 +186,6 @@ export default {
       const responseType = 'code'
       const state = Math.random().toString(36).substring(7)
       
-      // Guardar state para verificación
       localStorage.setItem('google_oauth_state', state)
       
       const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -207,11 +201,9 @@ export default {
       console.log('CLIENT ID usado:', process.env.VUE_APP_GOOGLE_CLIENT_ID)
 
       
-      // Redireccionar a Google
       window.location.href = googleAuthUrl
     },
 
-    // Manejar callback de Google
     async handleGoogleCallback() {
       const urlParams = new URLSearchParams(window.location.search)
       const code = urlParams.get('code')
@@ -227,7 +219,6 @@ export default {
       if (code && state) {
         console.log('📝 Código de autorización recibido:', code.substring(0, 20) + '...')
         
-        // Verificar state
         const savedState = localStorage.getItem('google_oauth_state')
         if (state !== savedState) {
           console.error('❌ State no válido')
@@ -238,7 +229,6 @@ export default {
         try {
           this.loading = true
           
-          // Enviar código al backend
           console.log('📤 Enviando código al backend...')
           
           const response = await authService.loginWithGoogleCode(code)
@@ -247,7 +237,6 @@ export default {
 
           this.successMessage = this.$t('LoginView.processingGoogle')
 
-          // Limpiar URL
           window.history.replaceState({}, document.title, '/login')
           
           setTimeout(() => {
@@ -264,7 +253,6 @@ export default {
       }
     },
 
-    // Mantener método original para el botón oculto
     async handleSignInSuccess(googleUser) {
       console.log('🎯 Google Sign-In Success (método original):', googleUser)
       
@@ -428,7 +416,6 @@ h1 {
   transform: none;
 }
 
-/* Estilos para Google Sign-In */
 .google-signin-container {
   margin-top: 24px;
 }
@@ -457,7 +444,6 @@ h1 {
   position: relative;
 }
 
-/* Botón de redirección personalizado */
 .google-signin-redirect {
   display: flex;
   align-items: center;

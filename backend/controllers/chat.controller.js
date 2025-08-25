@@ -3,7 +3,6 @@ const chatService = require('../services/chat.service');
 class ChatController {
   async getAvailableUsers(req, res) {
     try {
-      // 🔧 FIX: Usar req.user del middleware en lugar del token manual
       const result = await chatService.getAvailableUsers(req.user.userId);
       res.json(result);
     } catch (error) {
@@ -14,7 +13,6 @@ class ChatController {
 
   async getConversations(req, res) {
     try {
-      // 🔧 FIX: Usar req.user del middleware
       const result = await chatService.getConversations(req.user.userId);
       res.json(result);
     } catch (error) {
@@ -25,7 +23,6 @@ class ChatController {
 
   async saveConversation(req, res) {
     try {
-      // 🔧 FIX: Usar req.user del middleware
       const result = await chatService.saveConversation(req.user.userId, req.body);
       res.json(result);
     } catch (error) {
@@ -36,7 +33,6 @@ class ChatController {
 
   async downloadConversation(req, res) {
     try {
-      // 🔧 FIX: Usar req.user del middleware
       const conversationId = req.params.conversationId;
       await chatService.downloadConversation(req.user.userId, conversationId, res);
     } catch (error) {

@@ -40,7 +40,6 @@ const routes = [
     path: '/reset-password',
     name: 'ResetPassword',
     component: ResetPasswordView,
-    // 🔒 Validación: Impedir acceso sin token
     beforeEnter: (to, from, next) => {
       const resetToken = to.query.token;
       
@@ -76,32 +75,32 @@ const routes = [
     component: TeacherDashboard,
     meta: { requiresAuth: true, role: 'teacher' }
   },
-  // Ruta para el chat
+
   {
     path: '/chat',
     name: 'Chat',
     component: ChatView,
     meta: { requiresAuth: true }
   },
-  // 🆕 Nueva ruta para errores con código específico
+
   {
     path: '/error/:code?',
     name: 'Error',
     component: ErrorView,
     props: true
   },
-  // 🆕 Ruta 404 - DEBE IR AL FINAL
+
   {
     path: '*',
     name: 'NotFound', 
     component: NotFoundView
   },
-  // 🆕 Rutas para gestión de asignaturas 
+
   {
     path: '/subjects',
     name: 'Subjects',
     component: SubjectsManager,
-    meta: { requiresAuth: true } // Asegurar que requiere autenticación
+    meta: { requiresAuth: true }
   },
   {
   path: '/chat-history',
@@ -116,9 +115,8 @@ const router = new VueRouter({
   routes
 })
 
-// Guard para proteger rutas autenticadas
 router.beforeEach((to, from, next) => {
-  // Importar authService dinámicamente para evitar problemas de importación circular
+
   import('../services/authService').then(({ default: authService }) => {
     if (to.meta.requiresAuth) {
       if (!authService.isAuthenticated()) {

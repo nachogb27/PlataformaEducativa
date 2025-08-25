@@ -1,17 +1,14 @@
-// config/aws.js - Con metadata corregida
 const AWS = require('aws-sdk');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const path = require('path');
 
-// Configurar AWS S3
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   region: process.env.AWS_REGION || 'us-east-1'
 });
 
-// Configurar multer para S3
 const uploadToS3 = multer({
   storage: multerS3({
     s3: s3,
@@ -20,7 +17,7 @@ const uploadToS3 = multer({
     metadata: function (req, file, cb) {
       cb(null, {
         fieldName: file.fieldname,
-        uploadedBy: req.user ? req.user.id.toString() : 'anonymous', // ✅ Convertir a string
+        uploadedBy: req.user ? req.user.id.toString() : 'anonymous', 
         uploadDate: new Date().toISOString()
       });
     },
@@ -30,7 +27,7 @@ const uploadToS3 = multer({
     }
   }),
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB límite
+    fileSize: 5 * 1024 * 1024 
   },
   fileFilter: function (req, file, cb) {
     const allowedTypes = /jpeg|jpg|png|gif/;
@@ -45,7 +42,6 @@ const uploadToS3 = multer({
   }
 });
 
-// Función para eliminar archivo de S3
 const deleteFromS3 = async (fileKey) => {
   try {
     const params = {
@@ -62,7 +58,6 @@ const deleteFromS3 = async (fileKey) => {
   }
 };
 
-// Función para extraer la key del archivo desde la URL completa
 const extractS3Key = (s3Url) => {
   if (!s3Url) return null;
   
@@ -83,7 +78,6 @@ const extractS3Key = (s3Url) => {
   }
 };
 
-// Función para verificar si el bucket existe
 const checkBucketExists = async () => {
   try {
     await s3.headBucket({ Bucket: process.env.AWS_S3_BUCKET_NAME }).promise();
@@ -95,13 +89,12 @@ const checkBucketExists = async () => {
   }
 };
 
-// Función para generar URLs firmadas (signed URLs) para acceso temporal
 const getSignedUrl = (fileKey, expiresIn = 3600) => {
   try {
     const params = {
       Bucket: process.env.AWS_S3_BUCKET_NAME,
       Key: fileKey,
-      Expires: expiresIn // segundos
+      Expires: expiresIn 
     };
     
     return s3.getSignedUrl('getObject', params);

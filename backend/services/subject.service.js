@@ -9,14 +9,12 @@ class SubjectService {
   async getTeacherSubjects(teacherId) {
     const relations = await relationRepository.findSubjectsByTeacher(teacherId);
     
-    // Agrupar por asignatura y contar estudiantes
     const subjectCounts = {};
     relations.forEach(relation => {
       const subjectId = relation.subject.id;
       const subjectName = relation.subject.subject_name;
       
       if (subjectCounts[subjectId]) {
-        // Solo contar si no es una relación dummy
         if (relation.id_student !== relation.id_teacher) {
           subjectCounts[subjectId].studentCount++;
         }
@@ -33,18 +31,15 @@ class SubjectService {
   }
 
   async createSubject(teacherId, subjectName) {
-    // Verificar que no existe
     const existingSubject = await subjectRepository.findByName(subjectName);
     if (existingSubject) {
       throw new Error('Ya existe una asignatura con este nombre');
     }
     
-    // Crear la asignatura
     const newSubject = await subjectRepository.create({
       subject_name: subjectName
     });
     
-    // Crear relación dummy para marcar que el profesor da esta asignatura
     await relationRepository.create({
       id_student: teacherId,
       id_teacher: teacherId,
@@ -58,19 +53,16 @@ class SubjectService {
   }
 
   async updateSubject(teacherId, subjectId, subjectName) {
-    // Verificar que el profesor da esta asignatura
     const teacherRelation = await relationRepository.findRelation(teacherId, teacherId, subjectId);
     if (!teacherRelation) {
       throw new Error('No tienes permisos para editar esta asignatura');
     }
     
-    // Verificar que no existe otra asignatura con el mismo nombre
     const existingSubject = await subjectRepository.findByName(subjectName);
     if (existingSubject && existingSubject.id !== parseInt(subjectId)) {
       throw new Error('Ya existe otra asignatura con este nombre');
     }
     
-    // Actualizar
     const updatedSubject = await subjectRepository.update(subjectId, {
       subject_name: subjectName
     });
@@ -86,16 +78,13 @@ class SubjectService {
   }
 
   async deleteSubject(teacherId, subjectId) {
-    // Verificar que el profesor da esta asignatura
     const teacherRelation = await relationRepository.findRelation(teacherId, teacherId, subjectId);
     if (!teacherRelation) {
       throw new Error('No tienes permisos para eliminar esta asignatura');
     }
     
-    // Eliminar todas las relaciones
     await relationRepository.deleteBySubject(subjectId);
     
-    // Eliminar la asignatura
     const deletedRows = await subjectRepository.delete(subjectId);
     if (deletedRows === 0) {
       throw new Error('Asignatura no encontrada');
@@ -105,19 +94,16 @@ class SubjectService {
   }
 
   async joinAsTeacher(teacherId, subjectId) {
-    // Verificar que la asignatura existe
     const subject = await subjectRepository.findById(subjectId);
     if (!subject) {
       throw new Error('Asignatura no encontrada');
     }
     
-    // Verificar que no esté ya dando esta asignatura
     const existingRelation = await relationRepository.findRelation(teacherId, teacherId, subjectId);
     if (existingRelation) {
       throw new Error('Ya estás dando esta asignatura');
     }
     
-    // Crear relación dummy
     await relationRepository.create({
       id_student: teacherId,
       id_teacher: teacherId,

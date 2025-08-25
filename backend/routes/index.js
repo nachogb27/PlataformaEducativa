@@ -8,7 +8,6 @@ const chatRoutes = require('./chat.routes');
 
 const router = express.Router();
 
-// Configurar todas las rutas
 router.use('/auth', authRoutes);
 router.use('/profile', userRoutes);
 router.use('/subjects', subjectRoutes);

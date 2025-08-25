@@ -1,6 +1,5 @@
 <template>
   <div class="chat-container">
-    <!-- Header del chat -->
     <div class="chat-header">
       <div class="header-content">
         <div class="header-left">
@@ -39,7 +38,6 @@
     </div>
 
     <div class="chat-content">
-      <!-- Sidebar de usuarios -->
       <div class="users-sidebar">
         <div class="sidebar-header">
           <h3>{{ user?.role === 'teacher' ? $t('ChatView.students') : $t('ChatView.teachers') }}</h3>
@@ -78,7 +76,6 @@
         </div>
       </div>
 
-      <!-- Área de chat -->
       <div class="chat-area">
         <div v-if="!selectedUser" class="no-chat-selected">
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -89,7 +86,6 @@
         </div>
 
         <div v-else class="chat-messages-container">
-          <!-- Mensajes -->
           <div class="messages-area" ref="messagesArea">
             <div v-if="loadingMessages" class="loading-messages">
               <div class="spinner"></div>
@@ -117,7 +113,6 @@
             </div>
           </div>
 
-          <!-- Área de escritura -->
           <div class="message-input-area">
             <form @submit.prevent="sendMessage" class="message-form">
               <div class="input-container">
@@ -146,7 +141,6 @@
       </div>
     </div>
 
-    <!-- Modal de historial -->
     <div v-if="showHistoryModal" class="modal-overlay" @click="closeHistoryModal">
       <div class="modal-content history-modal" @click.stop>
         <div class="modal-header">
@@ -206,7 +200,6 @@
       </div>
     </div>
 
-    <!-- Notificaciones -->
     <div v-if="notification" :class="['notification', notification.type]">
       {{ notification.message }}
     </div>
@@ -258,7 +251,6 @@ export default {
   },
   methods: {
     async initializeChat() {
-      // Verificar autenticación
       if (!authService.isAuthenticated()) {
         this.$router.push('/login')
         return
@@ -304,8 +296,7 @@ export default {
         this.ws.onopen = () => {
           console.log('🔗 WebSocket conectado')
           this.connectionStatus = 'connected'
-          
-          // Registrar usuario
+
           this.ws.send(JSON.stringify({
             type: 'register',
             userId: this.user.id
@@ -324,8 +315,7 @@ export default {
         this.ws.onclose = () => {
           console.log('🔌 WebSocket desconectado')
           this.connectionStatus = 'disconnected'
-          
-          // Reconectar automáticamente después de 3 segundos
+
           setTimeout(() => {
             if (this.connectionStatus === 'disconnected') {
               this.connectWebSocket()
@@ -360,7 +350,6 @@ export default {
       break;
 
     case 'message':
-      // 🔧 FIX: Solo agregar si es para el chat actual Y no existe ya
       if (this.selectedUser && data.from === this.selectedUser.userId) {
         const messageExists = this.currentMessages.some(msg => 
           msg.messageId === data.messageId ||
@@ -385,17 +374,14 @@ export default {
       break;
 
     case 'message_sent':
-      // 🔧 FIX: Confirmación de mensaje enviado - NO agregar a la lista
       console.log('✅ Mensaje enviado confirmado');
       break;
 
     case 'history': {
-      // 🔧 FIX: Reemplazar completamente los mensajes
       const historyMessages = data.messages || [];
       
       console.log(`📜 Cargando historial: ${historyMessages.length} mensajes`);
-      
-      // Limpiar mensajes actuales y cargar historial
+ 
       this.currentMessages = historyMessages.map(msg => ({
         from: msg.from,
         to: msg.to,
@@ -418,13 +404,10 @@ export default {
 
 async selectUser(userItem) {
   const selectedUserId = userItem.id || userItem.userId;
-  
-  // Prevenir selección del mismo usuario
+
   if (this.selectedUser?.id === selectedUserId || this.selectedUser?.userId === selectedUserId) {
     return;
   }
-  
-  // Prevenir llamadas múltiples simultáneas
   if (this.loadingMessages) {
     return;
   }
@@ -436,12 +419,10 @@ async selectUser(userItem) {
     id: selectedUserId,
     userId: selectedUserId
   };
-  
-  // 🔧 FIX: Limpiar COMPLETAMENTE los mensajes anteriores
+
   this.currentMessages = [];
   this.loadingMessages = true;
 
-  // Solicitar historial
   if (this.ws && this.ws.readyState === WebSocket.OPEN) {
     this.ws.send(JSON.stringify({
       type: 'get_history',  
@@ -449,7 +430,6 @@ async selectUser(userItem) {
     }));
   }
 
-  // Timeout para loading
   setTimeout(() => {
     if (this.loadingMessages) {
       this.loadingMessages = false;
@@ -457,7 +437,6 @@ async selectUser(userItem) {
   }, 3000);
 },
 
-// Método sendMessage CORREGIDO
 sendMessage() {
   if (!this.newMessage.trim() || !this.selectedUser || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
     return;
@@ -476,7 +455,6 @@ sendMessage() {
     messageId: messageId
   };
 
-  // 🔧 FIX: Agregar mensaje localmente INMEDIATAMENTE
   this.currentMessages.push({
     from: this.user.id,
     to: selectedUserId,
@@ -485,10 +463,9 @@ sendMessage() {
     messageId: messageId
   });
   
-  // Enviar por WebSocket
+
   this.ws.send(JSON.stringify(messageData));
 
-  // Limpiar input y scroll
   this.newMessage = '';
   this.adjustTextareaHeight();
   this.scrollToBottom();
@@ -575,7 +552,6 @@ sendMessage() {
           throw new Error(error.error || 'Error descargando conversación')
         }
 
-        // Crear elemento para descarga
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -659,7 +635,7 @@ sendMessage() {
     },
 
     goBack() {
-      // Determinar a dónde volver basado en el rol del usuario
+
       if (this.user?.role === 'teacher') {
         this.$router.push('/teacher-dashboard')
       } else {
@@ -994,13 +970,11 @@ sendMessage() {
   display: flex;
   flex-direction: column;
   max-height: 800px; 
-  
-  /* Scroll personalizado bonito */
+
   scrollbar-width: thin;
   scrollbar-color: rgba(102, 126, 234, 0.3) transparent;
 }
 
-/* Para navegadores WebKit (Chrome, Safari, Edge) */
 .messages-area::-webkit-scrollbar {
   width: 8px;
 }
@@ -1095,7 +1069,6 @@ sendMessage() {
   text-align: right;
 }
 
-/* Message Input */
 .message-input-area {
   border-top: 1px solid rgba(226, 232, 240, 0.5);
   background: rgba(255, 255, 255, 0.95);

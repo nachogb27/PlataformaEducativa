@@ -6,7 +6,7 @@ class RelationRepository {
     return await StudentsTeachersRelation.findAll({
       where: {
         id_teacher: teacherId,
-        id_student: { [Op.ne]: teacherId } // Excluir relaciones dummy
+        id_student: { [Op.ne]: teacherId } 
       },
       include: [
         {
@@ -64,27 +64,22 @@ class RelationRepository {
     });
   }
 
- // ALTERNATIVA MÁS SIMPLE para findAvailableStudents
 async findAvailableStudents(subjectId) {
-  // Paso 1: Obtener TODAS las relaciones de esta asignatura
   const allRelations = await StudentsTeachersRelation.findAll({
     where: { id_subject: subjectId },
     attributes: ['id_student', 'id_teacher']
   });
 
-  // Paso 2: Filtrar solo estudiantes reales (no relaciones dummy)
   const assignedStudentIds = allRelations
     .filter(relation => relation.id_student !== relation.id_teacher)
     .map(relation => relation.id_student);
 
-  // Paso 3: Construir consulta para estudiantes disponibles
-  let whereClause = { role: 1 }; // Solo estudiantes
+  let whereClause = { role: 1 }; 
 
   if (assignedStudentIds.length > 0) {
     whereClause.id = { [Op.notIn]: assignedStudentIds };
   }
 
-  // Paso 4: Obtener estudiantes disponibles
   return await User.findAll({
     where: whereClause,
     attributes: ['id', 'name', 'surnames', 'email', 'avatar'],
@@ -122,9 +117,6 @@ async findAvailableStudents(subjectId) {
     });
   }
 
-  // 🔧 AGREGAR ESTE MÉTODO A TU relation.repository.js
-
-// Método mejorado para verificar si un profesor puede gestionar una asignatura
 async canTeacherManageSubject(teacherId, subjectId) {
   const relation = await StudentsTeachersRelation.findOne({
     where: {
@@ -133,18 +125,15 @@ async canTeacherManageSubject(teacherId, subjectId) {
     }
   });
   
-  return !!relation; // Devuelve true si existe alguna relación
+  return !!relation; 
 }
 
-// Método para crear relación dummy si no existe
 async ensureTeacherSubjectRelation(teacherId, subjectId) {
-  // Verificar si ya existe alguna relación del profesor con esta asignatura
   const existingRelation = await this.canTeacherManageSubject(teacherId, subjectId);
   
   if (!existingRelation) {
-    // Crear relación dummy
     await this.create({
-      id_student: teacherId,  // Relación dummy
+      id_student: teacherId,  
       id_teacher: teacherId,
       id_subject: subjectId
     });

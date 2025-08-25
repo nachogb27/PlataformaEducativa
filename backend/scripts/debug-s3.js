@@ -1,14 +1,11 @@
-// scripts/debug-s3.js
 require('dotenv').config();
 
 console.log('🔍 Diagnóstico de configuración AWS S3\n');
 
-// 1. Verificar que dotenv está cargando correctamente
 console.log('📁 1. Verificando archivo .env:');
 console.log(`   Ruta del proyecto: ${process.cwd()}`);
 console.log(`   NODE_ENV: ${process.env.NODE_ENV || 'no definido'}`);
 
-// 2. Mostrar todas las variables AWS
 console.log('\n🔧 2. Variables de entorno AWS:');
 const awsVars = [
   'AWS_ACCESS_KEY_ID',
@@ -20,7 +17,6 @@ const awsVars = [
 awsVars.forEach(varName => {
   const value = process.env[varName];
   if (value) {
-    // Ocultar datos sensibles
     if (varName.includes('KEY') || varName.includes('SECRET')) {
       console.log(`   ${varName}: ${'*'.repeat(Math.min(value.length, 20))}`);
     } else {
@@ -31,7 +27,6 @@ awsVars.forEach(varName => {
   }
 });
 
-// 3. Verificar el contenido del .env si existe
 console.log('\n📄 3. Verificando archivo .env:');
 const fs = require('fs');
 const path = require('path');
@@ -45,7 +40,6 @@ try {
     console.log(`   Archivo encontrado: ${envPath}`);
     console.log(`   Líneas en el archivo: ${lines.length}`);
     
-    // Buscar líneas relacionadas con AWS
     const awsLines = lines.filter(line => 
       line.trim().startsWith('AWS_') && !line.trim().startsWith('#')
     );
@@ -56,7 +50,6 @@ try {
       console.log(`     ${index + 1}. ${key}=...`);
     });
     
-    // Verificar si hay líneas comentadas
     const commentedAws = lines.filter(line => 
       line.trim().startsWith('#') && line.includes('AWS_')
     );
@@ -75,19 +68,16 @@ try {
   console.log(`   ❌ Error leyendo .env: ${error.message}`);
 }
 
-// 4. Intentar cargar la configuración AWS
 console.log('\n⚙️  4. Probando configuración AWS:');
 try {
   console.log('   Intentando importar config/aws.js...');
   
-  // Verificar que el bucket name esté definido antes de importar
   if (!process.env.AWS_S3_BUCKET_NAME) {
     console.log('   ❌ AWS_S3_BUCKET_NAME no está definido - esto causará el error');
     console.log('   💡 Solución: Define AWS_S3_BUCKET_NAME en tu archivo .env');
   } else {
     console.log(`   ✅ AWS_S3_BUCKET_NAME definido: ${process.env.AWS_S3_BUCKET_NAME}`);
     
-    // Intentar importar la configuración
     const awsConfig = require('../config/aws');
     console.log('   ✅ Configuración AWS importada correctamente');
   }
@@ -97,7 +87,6 @@ try {
   console.log(`   Stack: ${error.stack}`);
 }
 
-// 5. Generar ejemplo de .env
 console.log('\n📝 5. Ejemplo de archivo .env requerido:');
 console.log(`
 # Archivo .env (debe estar en la raíz del backend)

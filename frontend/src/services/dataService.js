@@ -1,13 +1,9 @@
-// services/dataService.js
-
 import authService from './authService'
 
 const API_URL = 'http://localhost:3000/api';
 
 const dataService = {
-  // ============= MÉTODOS EXISTENTES (SIN CAMBIOS) =============
-  
-  // Obtener profesores del estudiante
+
   async getStudentTeachers() {
     try {
       const response = await fetch(`${API_URL}/student/teachers`, {
@@ -29,7 +25,6 @@ const dataService = {
     }
   },
 
-  // Obtener estudiantes del profesor
   async getTeacherStudents() {
     try {
       const response = await fetch(`${API_URL}/teacher/students`, {
@@ -82,7 +77,6 @@ const dataService = {
     }
   },
 
-  // Eliminar estudiante (profesor)
   async deleteStudent(studentId) {
     try {
       const response = await fetch(`${API_URL}/teacher/students/${studentId}`, {
@@ -105,7 +99,6 @@ const dataService = {
     }
   },
 
-  // Obtener perfil del usuario
   async getProfile() {
     try {
       const response = await fetch(`${API_URL}/profile`, {
@@ -127,7 +120,6 @@ const dataService = {
     }
   },
 
-  // Actualizar perfil
   async updateProfile(profileData) {
     try {
       const response = await fetch(`${API_URL}/profile`, {
@@ -151,7 +143,6 @@ const dataService = {
     }
   },
 
-  // Actualizar avatar
   async updateAvatar(imageData) {
     try {
       const response = await fetch(`${API_URL}/profile/avatar`, {
@@ -177,7 +168,6 @@ const dataService = {
 
   // ============= MÉTODOS DE ASIGNATURAS =============
 
-  // Obtener estudiantes asignados a una asignatura específica (profesor)
   async getAssignedStudents(subjectId) {
     try {
       const response = await fetch(`${API_URL}/teacher/subject/${subjectId}/students`, {
@@ -199,7 +189,6 @@ const dataService = {
     }
   },
 
-  // Obtener estudiantes disponibles para asignar a una asignatura (profesor)
   async getAvailableStudents(subjectId) {
     try {
       const response = await fetch(`${API_URL}/teacher/subject/${subjectId}/available-students`, {
@@ -221,7 +210,6 @@ const dataService = {
     }
   },
 
-  // Asignar estudiante a asignatura (profesor)
   async assignStudentToSubject(studentId, subjectId) {
     try {
       const response = await fetch(`${API_URL}/teacher/assign-student`, {
@@ -248,7 +236,6 @@ const dataService = {
     }
   },
 
-  // Desasignar estudiante de asignatura (profesor)
   async removeStudentFromSubject(studentId, subjectId) {
     try {
       const response = await fetch(`${API_URL}/teacher/remove-student`, {
@@ -275,7 +262,6 @@ const dataService = {
     }
   },
 
-  // Obtener asignaturas del estudiante (las que está cursando)
   async getStudentSubjects() {
     try {
       const response = await fetch(`${API_URL}/student/subjects`, {
@@ -297,7 +283,6 @@ const dataService = {
     }
   },
 
-  // Obtener asignaturas del profesor
   async getTeacherSubjects() {
     try {
       const response = await fetch(`${API_URL}/teacher/subjects`, {
@@ -319,7 +304,6 @@ const dataService = {
     }
   },
 
-  // Crear nueva asignatura (solo profesores)
   async createSubject(subjectName) {
     try {
       const response = await fetch(`${API_URL}/subjects`, {
@@ -345,7 +329,6 @@ const dataService = {
     }
   },
 
-  // Actualizar asignatura (solo profesores)
   async updateSubject(subjectId, subjectName) {
     try {
       const response = await fetch(`${API_URL}/subjects/${subjectId}`, {
@@ -371,7 +354,6 @@ const dataService = {
     }
   },
 
-  // Eliminar asignatura (solo profesores)
   async deleteSubject(subjectId) {
     try {
       const response = await fetch(`${API_URL}/subjects/${subjectId}`, {
@@ -394,7 +376,6 @@ const dataService = {
     }
   },
 
-  // Desasignar profesor de asignatura
   async removeTeacherFromSubject(subjectId) {
     try {
       const response = await fetch(`${API_URL}/teacher/remove-from-subject`, {
@@ -420,7 +401,6 @@ const dataService = {
     }
   },
 
-  // Obtener todas las asignaturas del sistema
   async getAllSubjects() {
     try {
       const response = await fetch(`${API_URL}/subjects`, {
@@ -442,7 +422,6 @@ const dataService = {
     }
   },
 
-  // Unirse como profesor a una asignatura
   async joinAsTeacher(subjectId) {
     try {
       const response = await fetch(`${API_URL}/teacher/join-subject`, {
@@ -468,7 +447,6 @@ const dataService = {
     }
   },
 
-  // Obtener asignaturas detalladas del profesor (con estudiantes)
   async getTeacherSubjectsDetailed() {
     try {
       const response = await fetch(`${API_URL}/teacher/subjects-detailed`, {

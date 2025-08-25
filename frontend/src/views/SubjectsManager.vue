@@ -29,7 +29,6 @@
     </div>
 
     <div class="subjects-content">
-      <!-- Debug info -->
       <div v-if="debugMode" class="debug-info">
         <h4>🔍 {{ $t('SubjectsManager.debug') }}</h4>
         <p>{{ $t('SubjectsManager.token') }}: {{ debugInfo.hasToken ? $t('SubjectsManager.present') : $t('SubjectsManager.absent') }}</p>
@@ -55,7 +54,6 @@
         </div>
       </div>
 
-      <!-- Vista para profesores -->
       <div v-else-if="isTeacher" class="teacher-view">
         <div v-if="subjects.length === 0" class="empty-state">
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -128,7 +126,6 @@
         </div>
       </div>
 
-      <!-- Vista para estudiantes - SIMPLIFICADA -->
       <div v-else class="student-view">
         <div v-if="subjects.length === 0" class="empty-state">
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -154,7 +151,6 @@
       </div>
     </div>
 
-    <!-- Modal para crear/editar asignatura -->
     <div v-if="showCreateModal || showEditModal" class="modal-overlay" @click="closeModals">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
@@ -195,7 +191,6 @@
       </div>
     </div>
 
-    <!-- Modal para gestionar estudiantes -->
     <div v-if="showStudentsModal" class="modal-overlay" @click="closeStudentsModal">
       <div class="modal-content large" @click.stop>
         <div class="modal-header">
@@ -208,7 +203,6 @@
         </div>
         
         <div class="students-management">
-          <!-- Estudiantes asignados -->
           <div class="assigned-students">
             <h4>{{ $t('SubjectsManager.assignedStudents') }} ({{ assignedStudents.length }})</h4>
             <div v-if="assignedStudents.length === 0" class="empty-list">
@@ -281,16 +275,12 @@ export default {
   },
   data() {
     return {
-      // Estado general
       loading: true,
       error: null,
       loadingMessage: 'Cargando asignaturas...',
       userRole: null,
       
-      // Datos
-      subjects: [], // Todas las asignaturas (del profesor o del estudiante)
-      
-      // Modales
+      subjects: [], 
       showCreateModal: false,
       showEditModal: false,
       showStudentsModal: false,
@@ -298,19 +288,16 @@ export default {
       saving: false,
       joining: false,
       
-      // Formulario
       subjectForm: {
         id: null,
         name: ''
       },
       
-      // Gestión de estudiantes
       selectedSubject: null,
       assignedStudents: [],
       availableStudents: [],
       studentSearch: '',
       
-      // Debug
       debugMode: false,
       debugInfo: {
         hasToken: false,
@@ -347,14 +334,12 @@ export default {
       console.log('🔄 Inicializando gestor de asignaturas...')
       
       try {
-        // Verificar autenticación
         if (!authService.isAuthenticated()) {
           console.log('❌ Usuario no autenticado, redirigiendo a login')
           this.$router.push('/login')
           return
         }
         
-        // Obtener información del usuario
         const user = authService.getUser()
         console.log('👤 Usuario actual:', user)
         
@@ -366,7 +351,6 @@ export default {
           loadingState: 'authenticated'
         }
         
-        // Cargar datos según el rol
         await this.loadData()
         
       } catch (error) {
@@ -394,7 +378,6 @@ export default {
         this.error = error.message || 'Error desconocido al cargar datos'
         this.debugInfo.loadingState = 'error'
         
-        // Si es un error de autenticación, redirigir al login
         if (error.message.includes('Token') || error.message.includes('401') || error.message.includes('jwt')) {
           console.log('🔄 Error de autenticación, limpiando sesión...')
           authService.logout()
@@ -410,13 +393,10 @@ export default {
     async loadTeacherData() {
       this.loadingMessage = 'Cargando asignaturas del sistema...'
       
-      // Cargar todas las asignaturas
       const allSubjects = await dataService.getAllSubjects()
       
-      // Cargar asignaturas que da el profesor
       const teacherSubjects = await dataService.getTeacherSubjects()
       
-      // Marcar cuáles está dando
       this.subjects = allSubjects.map(subject => {
         const teachingSubject = teacherSubjects.find(ts => ts.id === subject.id)
         return {
@@ -432,7 +412,6 @@ export default {
     async loadStudentData() {
       this.loadingMessage = 'Cargando tus asignaturas...'
       
-      // Cargar solo las asignaturas del estudiante
       this.subjects = await dataService.getStudentSubjects()
       
       console.log('✅ Datos del estudiante cargados:', this.subjects.length, 'asignaturas')
@@ -456,7 +435,6 @@ export default {
         await dataService.joinAsTeacher(subject.id)
         alert('Ahora impartes esta asignatura')
         
-        // Recargar datos
         await this.loadTeacherData()
       } catch (error) {
         alert('Error al unirse como profesor: ' + error.message)
@@ -530,7 +508,6 @@ export default {
       this.studentSearch = ''
       
       try {
-        // Cargar estudiantes asignados y disponibles
         const [assigned, available] = await Promise.all([
           dataService.getAssignedStudents(subject.id),
           dataService.getAvailableStudents(subject.id)
@@ -547,11 +524,9 @@ export default {
       try {
         await dataService.assignStudentToSubject(student.id, this.selectedSubject.id)
         
-        // Mover estudiante de disponible a asignado
         this.availableStudents = this.availableStudents.filter(s => s.id !== student.id)
         this.assignedStudents.push(student)
         
-        // Actualizar contador en la vista principal
         const subjectIndex = this.subjects.findIndex(s => s.id === this.selectedSubject.id)
         if (subjectIndex !== -1) {
           this.subjects[subjectIndex].studentCount = this.assignedStudents.length
@@ -570,11 +545,9 @@ export default {
       try {
         await dataService.removeStudentFromSubject(student.id, this.selectedSubject.id)
         
-        // Mover estudiante de asignado a disponible
         this.assignedStudents = this.assignedStudents.filter(s => s.id !== student.id)
         this.availableStudents.push(student)
         
-        // Actualizar contador en la vista principal
         const subjectIndex = this.subjects.findIndex(s => s.id === this.selectedSubject.id)
         if (subjectIndex !== -1) {
           this.subjects[subjectIndex].studentCount = this.assignedStudents.length
@@ -614,7 +587,6 @@ export default {
 </script>
 
 <style scoped>
-/* Estilos base (mantenidos igual) */
 .subjects-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -707,7 +679,6 @@ export default {
   padding: 40px 24px;
 }
 
-/* Debug info, loading, error (estilos mantenidos) */
 .debug-info {
   background: rgba(255, 193, 7, 0.1);
   border: 1px solid rgba(255, 193, 7, 0.3);
@@ -792,7 +763,6 @@ export default {
   color: white;
 }
 
-/* Empty state */
 .empty-state {
   text-align: center;
   padding: 80px 20px;
@@ -814,7 +784,6 @@ export default {
   font-size: 16px;
 }
 
-/* Grid de asignaturas */
 .subjects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -888,7 +857,6 @@ export default {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Status badges */
 .status-badge {
   padding: 4px 12px;
   border-radius: 12px;
@@ -912,7 +880,6 @@ export default {
   font-weight: 600;
 }
 
-/* Contenido de tarjetas */
 .card-content {
   display: flex;
   flex-direction: column;
@@ -996,7 +963,6 @@ export default {
   color: #718096;
 }
 
-/* Modal styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1132,7 +1098,6 @@ export default {
   transform: none;
 }
 
-/* Gestión de estudiantes */
 .students-management {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1259,26 +1224,22 @@ export default {
   color: white;
 }
 
-/* Añadir estudiante */
 .add-button {
   background: linear-gradient(135deg, #38b2ac, #319795);
   box-shadow: 0 4px 6px rgba(56, 178, 172, 0.3);
 }
 
-/* Quitar estudiante */
 .remove-button {
   background: linear-gradient(135deg, #f56565, #c53030);
   box-shadow: 0 4px 6px rgba(245, 101, 101, 0.3);
 }
 
-/* Hover */
 .add-button:hover,
 .remove-button:hover {
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
-/* Activo (click) */
 .add-button:active,
 .remove-button:active {
   transform: translateY(0);

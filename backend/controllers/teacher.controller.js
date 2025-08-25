@@ -100,9 +100,6 @@ class TeacherController {
     }
   }
 
-  // 🔧 AGREGAR ESTOS MÉTODOS AL FINAL DE tu teacher.controller.js
-
-  // Método alternativo para remover estudiante (POST con body)
   async removeStudentFromSubjectByPost(req, res) {
     try {
       const teacherId = req.user.userId;
@@ -118,7 +115,6 @@ class TeacherController {
     }
   }
 
-  // Método alternativo para asignar estudiante (POST con body)
   async assignStudentToSubjectByPost(req, res) {
     try {
       const teacherId = req.user.userId;
@@ -134,9 +130,6 @@ class TeacherController {
     }
   }
 
-  // 🔧 AGREGAR ESTOS MÉTODOS AL FINAL DE tu teacher.controller.js
-
-  // Método alternativo para remover estudiante (POST con body)
   async removeStudentFromSubjectByPost(req, res) {
     try {
       const teacherId = req.user.userId;
@@ -152,7 +145,6 @@ class TeacherController {
     }
   }
 
-  // Método alternativo para asignar estudiante (POST con body)
   async assignStudentToSubjectByPost(req, res) {
     try {
       const teacherId = req.user.userId;
@@ -167,16 +159,14 @@ class TeacherController {
       res.status(400).json({ error: error.message });
     }
   }
-
-  // 🔧 NUEVO MÉTODO: Unirse a asignatura  
+  
   async joinSubject(req, res) {
     try {
       const teacherId = req.user.userId;
       const { subjectId } = req.body;
       
       console.log(`🎓 Profesor ${teacherId} uniéndose a asignatura ${subjectId}`);
-      
-      // Importar el servicio de subjects
+
       const subjectService = require('../services/subject.service');
       const result = await subjectService.joinAsTeacher(teacherId, subjectId);
       
@@ -187,15 +177,13 @@ class TeacherController {
     }
   }
 
-  // Método para unirse a asignatura
 async joinSubject(req, res) {
   try {
     const teacherId = req.user.userId;
     const { subjectId } = req.body;
     
     console.log(`🎓 Profesor ${teacherId} uniéndose a asignatura ${subjectId}`);
-    
-    // Importar el servicio de subjects
+
     const subjectService = require('../services/subject.service');
     const result = await subjectService.joinAsTeacher(teacherId, subjectId);
     

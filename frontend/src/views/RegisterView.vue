@@ -174,7 +174,6 @@ export default {
       this.errorMessage = '';
       this.successMessage = '';
       
-      // Validaciones finales
       this.validateEmail();
       this.validatePassword();
       
@@ -197,7 +196,6 @@ export default {
         
         if (response.ok) {
           this.successMessage = data.message;
-          // Limpiar formulario
           this.form = {
             name: '',
             surnames: '',

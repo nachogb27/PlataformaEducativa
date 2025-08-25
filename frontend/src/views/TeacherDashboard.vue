@@ -39,7 +39,6 @@
         <h2>{{ $t('TeacherDashboard.studentsTitle') }}</h2>
       </div>
       
-      <!-- Debug info expandido -->
       <div v-if="debugMode" class="debug-info">
         <h4>🔍 {{ $t('TeacherDashboard.debugTitle') }}</h4>
         <div class="debug-grid">
@@ -69,7 +68,6 @@
         </div>
       </div>
       
-      <!-- Filtros de búsqueda -->
       <div v-if="!loading && !error && students.length > 0" class="search-filters">
         <div class="filter-group">
           <label>{{ $t('TeacherDashboard.searchByName') }}</label>
@@ -202,7 +200,6 @@
           </table>
         </div>
         
-        <!-- Paginación -->
         <div v-if="filteredStudents.length > pageSize" class="pagination-container">
           <div class="pagination-info">
             {{$t('TeacherDashboard.paginationInfo', { start: startIndex + 1, end: endIndex, total: filteredStudents.length })}}
@@ -246,7 +243,6 @@
       </div>
     </div>
 
-    <!-- Modal de edición -->
     <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
@@ -335,14 +331,12 @@ export default {
       },
       editError: '',
       saving: false,
-      // Filtros y paginación
       filters: {
         name: '',
         email: ''
       },
       currentPage: 1,
       pageSize: 5,
-      // Debug mejorado
       debugMode: false,
       debugInfo: {
         hasToken: false,
@@ -363,7 +357,6 @@ export default {
     filteredStudents() {
       let filtered = this.students;
       
-      // Filtrar por nombre
       if (this.filters.name.trim()) {
         filtered = filtered.filter(student => 
           student.name.toLowerCase().includes(this.filters.name.toLowerCase()) ||
@@ -371,7 +364,6 @@ export default {
         );
       }
       
-      // Filtrar por email
       if (this.filters.email.trim()) {
         filtered = filtered.filter(student => 
           student.email.toLowerCase().includes(this.filters.email.toLowerCase())
@@ -430,14 +422,12 @@ export default {
       this.log('🔄 Inicializando dashboard del profesor...')
       
       try {
-        // Verificar autenticación
         if (!authService.isAuthenticated()) {
           this.log('❌ Usuario no autenticado, redirigiendo a login')
           this.$router.push('/login')
           return
         }
         
-        // Obtener información del usuario
         const user = authService.getUser()
         this.log('👤 Usuario actual:', user)
         
@@ -450,7 +440,6 @@ export default {
           lastError: null
         }
         
-        // Verificar que es profesor
         if (user?.role !== 'teacher') {
           this.log('❌ Usuario no es profesor:', user?.role)
           this.error = 'Acceso denegado: Solo los profesores pueden acceder a esta página'
@@ -458,7 +447,6 @@ export default {
           return
         }
         
-        // Cargar estudiantes
         await this.loadStudents()
         
       } catch (error) {
@@ -476,7 +464,6 @@ export default {
         
         this.log('🔄 Cargando estudiantes del profesor...')
         
-        // Verificar token antes de hacer la petición
         const token = authService.getToken()
         if (!token) {
           throw new Error('Token de autenticación no disponible')
@@ -485,15 +472,13 @@ export default {
         this.log('🔑 Token encontrado, haciendo petición...')
         this.loadingMessage = 'Obteniendo lista de estudiantes...'
         
-        // Usar try-catch específico para la petición
         try {
           this.students = await dataService.getTeacherStudents()
           this.log('✅ Estudiantes cargados:', this.students.length)
           this.debugInfo.loadingState = 'success'
         } catch (fetchError) {
           this.log('❌ Error específico en petición:', fetchError)
-          
-          // Si el error contiene HTML, es probable que el endpoint no exista
+
           if (fetchError.message.includes('DOCTYPE') || fetchError.message.includes('Unexpected token')) {
             throw new Error('El endpoint /api/teacher/students no está disponible o devuelve HTML en lugar de JSON. Verifica que el servidor esté corriendo y tenga todos los endpoints.')
           }
@@ -506,8 +491,7 @@ export default {
         this.debugInfo.lastError = error.toString()
         this.error = error.message || 'Error desconocido al cargar estudiantes'
         this.debugInfo.loadingState = 'error'
-        
-        // Si es un error de autenticación, redirigir al login
+
         if (error.message.includes('Token') || error.message.includes('401') || error.message.includes('jwt')) {
           this.log('🔄 Error de autenticación, limpiando sesión...')
           authService.logout()
@@ -532,11 +516,10 @@ export default {
       this.log('🔗 Probando conexión con backend...')
       
       try {
-        // Test básico
+
         const response = await fetch('http://localhost:3000/api/subjects')
         this.log(`📡 Respuesta básica: ${response.status}`)
-        
-        // Test con autenticación
+
         const token = authService.getToken()
         if (token) {
           const authResponse = await fetch('http://localhost:3000/api/profile', {
@@ -627,8 +610,7 @@ export default {
      goToChat() {
       this.$router.push('/chat')
     },
-    
-    // Métodos de filtrado
+
     clearNameFilter() {
       this.filters.name = '';
     },
@@ -636,15 +618,13 @@ export default {
     clearEmailFilter() {
       this.filters.email = '';
     },
-    
-    // Métodos de paginación
+
     goToPage(page) {
       if (page >= 1 && page <= this.totalPages) {
         this.currentPage = page;
       }
     },
 
-    // Método para abrir el modal de edición
     editStudent(student) {
       this.log('✏️ Editando estudiante:', student)
       this.editingStudent = {
@@ -657,7 +637,6 @@ export default {
       this.editError = ''
     },
 
-    // Método para cerrar el modal de edición
     closeEditModal() {
       this.showEditModal = false
       this.editingStudent = {
@@ -669,7 +648,6 @@ export default {
       this.editError = ''
     },
 
-    // Método para guardar cambios de estudiante (edición)
     async saveStudent() {
       this.editError = '';
       this.saving = true;
@@ -683,7 +661,7 @@ export default {
           email: this.editingStudent.email
         });
 
-        // Actualizar la lista local
+
         const studentIndex = this.students.findIndex(s => s.id === this.editingStudent.id);
         if (studentIndex !== -1) {
           this.students[studentIndex].name = this.editingStudent.name;
@@ -693,8 +671,7 @@ export default {
 
         this.log('✅ Estudiante actualizado correctamente')
         this.closeEditModal();
-        
-        // Mostrar mensaje de éxito
+
         alert('Estudiante actualizado correctamente');
         
       } catch (error) {
@@ -711,7 +688,7 @@ export default {
           this.log('🗑️ Eliminando estudiante:', student)
           await dataService.deleteStudent(student.id)
           
-          // Eliminar de la lista local
+
           this.students = this.students.filter(s => s.id !== student.id)
           
           this.log('✅ Estudiante eliminado correctamente')
@@ -727,7 +704,7 @@ export default {
 </script>
 
 <style scoped>
-/* Todos los estilos anteriores más estos nuevos */
+
 .dashboard-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -854,7 +831,7 @@ export default {
   margin: 0;
 }
 
-/* Debug info mejorado */
+
 .debug-info {
   background: rgba(255, 193, 7, 0.1);
   border: 1px solid rgba(255, 193, 7, 0.3);
@@ -1191,7 +1168,6 @@ export default {
   z-index: 1000;
 }
 
-/* Modal styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1323,7 +1299,7 @@ export default {
   transform: none;
 }
 
-/* Estilos para filtros */
+
 .search-filters {
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
@@ -1389,7 +1365,6 @@ export default {
   color: #4a5568;
 }
 
-/* Estilos para paginación */
 .pagination-container {
   display: flex;
   justify-content: space-between;

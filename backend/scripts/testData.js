@@ -2,7 +2,6 @@ const { User, StudentsTeachersRelation, sequelize } = require('./index');
 
 async function createTestData() {
   try {
-    // Sincronizar tablas
     console.log('Sincronizando base de datos...');
     await sequelize.sync({ force: true });
     
@@ -12,7 +11,6 @@ async function createTestData() {
     
     console.log('Creando usuarios...');
     
-    // Crear 10 estudiantes
     const students = [];
     const studentNames = [
       { name: 'Juan', surname: 'Pérez García', email: 'juan.perez@email.es' },
@@ -40,7 +38,6 @@ async function createTestData() {
       students.push(student);
     }
 
-    // Crear 5 profesores
     const teachers = [];
     const teacherData = [
       { name: 'Roberto', surname: 'García Fernández', email: 'roberto.garcia@email.es', subject: 1 }, // Inglés
@@ -63,7 +60,6 @@ async function createTestData() {
       teachers.push({ ...teacher.toJSON(), subjectId: teacherData[i].subject });
     }
 
-    // Crear un usuario inactivo para probar
     await User.create({
       username: 'inactivo1',
       name: 'Usuario',
@@ -74,7 +70,6 @@ async function createTestData() {
       active: 0
     });
 
-    // Crear relaciones: cada estudiante cursa todas las asignaturas de los profesores
     console.log('Creando relaciones estudiante-profesor-asignatura...');
     for (const student of students) {
       for (const teacher of teachers) {

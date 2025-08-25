@@ -1,11 +1,9 @@
-// scripts/test-s3.js
 require('dotenv').config();
 const { checkBucketExists, s3 } = require('../config/aws');
 
 async function testS3Connection() {
   console.log('🧪 Probando conexión con AWS S3...\n');
   
-  // Test 1: Variables de entorno
   console.log('📋 1. Verificando variables de entorno:');
   const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION', 'AWS_S3_BUCKET_NAME'];
   
@@ -24,7 +22,6 @@ async function testS3Connection() {
     return false;
   }
   
-  // Test 2: Conexión al bucket
   console.log('\n🪣 2. Verificando acceso al bucket:');
   try {
     const bucketExists = await checkBucketExists();
@@ -39,17 +36,14 @@ async function testS3Connection() {
     return false;
   }
   
-  // Test 3: Permisos básicos
   console.log('\n🔐 3. Verificando permisos:');
   try {
-    // Test ListBucket
     await s3.listObjectsV2({
       Bucket: process.env.AWS_S3_BUCKET_NAME,
       MaxKeys: 1
     }).promise();
     console.log('   ✅ ListBucket: OK');
     
-    // Test GetBucketLocation
     const location = await s3.getBucketLocation({
       Bucket: process.env.AWS_S3_BUCKET_NAME
     }).promise();
@@ -60,7 +54,6 @@ async function testS3Connection() {
     return false;
   }
   
-  // Test 4: Subida de prueba
   console.log('\n📤 4. Probando subida de archivo:');
   try {
     const testData = Buffer.from('Test file for S3');
@@ -76,7 +69,6 @@ async function testS3Connection() {
     
     console.log(`   ✅ Archivo subido: ${uploadResult.Location}`);
     
-    // Limpiar archivo de prueba
     await s3.deleteObject({
       Bucket: process.env.AWS_S3_BUCKET_NAME,
       Key: testKey
@@ -93,7 +85,6 @@ async function testS3Connection() {
   return true;
 }
 
-// Ejecutar si se llama directamente
 if (require.main === module) {
   testS3Connection()
     .then(success => {

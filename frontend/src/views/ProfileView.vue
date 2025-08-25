@@ -44,8 +44,7 @@
                 <div class="upload-spinner"></div>
                 <span class="upload-text">Subiendo a S3...</span>
               </div>
-              
-              <!-- 🆕 Botones de acción mejorados -->
+
               <div class="avatar-actions">
                 <button 
                   @click="triggerFileInput" 
@@ -58,7 +57,6 @@
                   </svg>
                 </button>
                 
-                <!-- 🆕 Botón para eliminar avatar -->
                 <button 
                   v-if="profile.avatar" 
                   @click="deleteAvatar" 
@@ -72,8 +70,7 @@
                 </button>
               </div>
             </div>
-            
-            <!-- Input file oculto -->
+
             <input 
               ref="fileInput"
               type="file" 
@@ -81,8 +78,7 @@
               @change="handleFileChange"
               style="display: none"
             />
-            
-            <!-- 🆕 Información sobre S3 -->
+
             <div v-if="profile.avatar" class="avatar-info">
               <small class="avatar-source">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -101,7 +97,6 @@
           </div>
         </div>
 
-        <!-- Sección de información editable -->
         <div class="info-card">
           <h3>{{ $t('ProfileView.info') }}</h3>
           
@@ -180,7 +175,6 @@
           </form>
         </div>
 
-        <!-- Sección de estadísticas para profesores -->
         <div v-if="profile.role === 'teacher' && profile.subjectStats" class="stats-card">
           <h3>{{ $t('ProfileView.subjects') }}</h3>
           
@@ -279,7 +273,6 @@ export default {
         this.profile.surnames = this.editableProfile.surnames
         this.isEditing = false
         
-        // Actualizar también el usuario en authService
         const currentUser = authService.getUser()
         currentUser.name = this.editableProfile.name
         currentUser.surnames = this.editableProfile.surnames
@@ -300,14 +293,12 @@ export default {
       const file = event.target.files[0]
       if (!file) return
 
-      // Validar tipo de archivo
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
       if (!allowedTypes.includes(file.type)) {
         alert('Solo se permiten imágenes (JPEG, PNG, GIF)')
         return
       }
 
-      // Validar tamaño (5MB máximo)
       if (file.size > 5 * 1024 * 1024) {
         alert('La imagen no puede superar los 5MB')
         return
@@ -316,7 +307,6 @@ export default {
       this.uploadingAvatar = true
 
       try {
-        // 🆕 SUBIR USANDO FORMDATA EN LUGAR DE BASE64
         const formData = new FormData()
         formData.append('avatar', file)
 
@@ -325,7 +315,6 @@ export default {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
-            // ❌ NO incluir Content-Type para FormData
           },
           body: formData
         })
@@ -337,10 +326,8 @@ export default {
 
         const result = await response.json()
         
-        // Actualizar avatar en la UI
         this.profile.avatar = result.avatarUrl
         
-        // Actualizar también en authService
         const currentUser = authService.getUser()
         if (currentUser) {
           currentUser.avatar = result.avatarUrl
@@ -355,12 +342,10 @@ export default {
         alert('Error al subir imagen: ' + error.message)
       } finally {
         this.uploadingAvatar = false
-        // Limpiar input
         this.$refs.fileInput.value = ''
       }
     },
 
-    // 🆕 AGREGAR NUEVO MÉTODO PARA ELIMINAR AVATAR
     async deleteAvatar() {
       if (!this.profile.avatar) {
         alert('No hay avatar para eliminar')
@@ -386,10 +371,8 @@ export default {
           throw new Error(error.error || 'Error al eliminar el avatar')
         }
 
-        // Limpiar avatar en la UI
         this.profile.avatar = null
         
-        // Actualizar también en authService
         const currentUser = authService.getUser()
         if (currentUser) {
           currentUser.avatar = null
@@ -798,8 +781,6 @@ export default {
   right: 20px;
   z-index: 100;
 }
-
-/* 🆕 AGREGAR estos estilos al final del <style scoped> en ProfileView.vue */
 
 .avatar-actions {
   position: absolute;
