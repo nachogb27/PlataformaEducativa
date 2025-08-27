@@ -2,7 +2,9 @@
   "title": "Chat",
   "selectUser": "Select a user to chat",
   "students": "Students",
+  "student": "Student",
   "teachers": "Teachers",
+  "teacher": "Teacher",
   "connection": "Connection status",
   "connected": "Connected",
   "disconnected": "Disconnected",
@@ -21,8 +23,10 @@
   "savedSuccessfully": "Conversation saved successfully",
   "selectUserDescription": "Choose a user from the list to start chatting",
   "messages": "messages",
+  "loadingMessages": "Loading messages...",
   "typeMessage": "Type a message...",
   "connecting": "Connecting...",
   "connected": "Online",
-  "disconnected": "Disconnected"
+  "disconnected": "Disconnected",
+  "noMessages": "No messages"
 }

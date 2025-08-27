@@ -69,7 +69,7 @@
             </div>
             <div class="user-info">
               <span class="user-name">{{ userItem.name }} {{ userItem.surnames }}</span>
-              <span class="user-role">{{ userItem.role === 'teacher' ? $t('ChatView.teachers') : $t('ChatView.students') }}</span>
+              <span class="user-role">{{ userItem.role === 'teacher' ? $t('ChatView.teacher') : $t('ChatView.student') }}</span>
             </div>
             <div v-if="onlineUsers.has(userItem.userId)" class="online-indicator" :title="$t('ChatView.connected')"></div>
           </div>
