@@ -1,5 +1,10 @@
 {
   "title": "Page not found",
   "message": "The page you are looking for does not exist.",
-  "goHome": "Go Home"
+  "goHome": "Go Home",
+  "login": "Log In",
+  "register": "Register",
+  "forgotPassword": "Forgot Password?",
+  "suggestions": "Suggestions",
+  "route": "Requested Route"
 }

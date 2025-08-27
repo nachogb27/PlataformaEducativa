@@ -38,6 +38,20 @@
   "noAvailableStudents": "No hay estudiantes disponibles para asignar",
   "create": "Crear Asignatura",
   "assignedByTeachers": "Serán asignadas por el profesor",
-  "enrolled": "Inscrito"
-  
+  "enrolled": "Inscrito",
+  "createSubjectComplete": "¡Asignatura creada exitosamente!",
+  "createSubjectError": "Error al crear la asignatura: {message}",
+  "deleteSubjectQuestion": "¿Estás seguro de que deseas eliminar la asignatura \"{subject}\"? Esta acción eliminará también todas las inscripciones de estudiantes.",
+  "deleteSubjectComplete": "¡Asignatura eliminada exitosamente!",
+  "deleteSubjectError": "Error al eliminar la asignatura: {message}",
+  "joinSubjectQuestion": "¿Confirmas que deseas empezar a impartir la asignatura \"{subject}\"?",
+  "joinSubjectComplete": "¡Ahora estás impartiendo la asignatura \"{subject}\"!",
+  "joinSubjectError": "Error al empezar a impartir la asignatura: {message}",
+  "updateSubjectComplete": "¡Asignatura actualizada exitosamente!",
+  "updateSubjectError": "Error al actualizar la asignatura: {message}",
+  "studentAssigned": "Estudiante {name} {surnames} ha sido asignado a la asignatura",
+  "removeStudentQuestion": "¿Estás seguro de que deseas quitar a {name} {surnames} de esta asignatura?",
+  "studentRemoved": "Estudiante {name} {surnames} ha sido quitado de la asignatura",
+  "removeStudentError": "Error quitando estudiante: {message}"
+
 }

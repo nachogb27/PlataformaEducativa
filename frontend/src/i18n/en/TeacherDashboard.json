@@ -44,5 +44,11 @@
   "profile" : "My Profile",
   "chat": "Chat",
   "logout": "Log Out",
-  "paginationInfo": "Showing {start} - {end} of {total} students"
+  "paginationInfo": "Showing {start} - {end} of {total} students",
+  "email": "Email",
+  "deleteConfirm": "Are you sure you want to remove {name} {surname} from your list?",
+  "deleteStudentSuccess": "{name} {surname} has been removed from your list",
+  "deleteStudentError": "Error removing student: {message}",
+  "updateStudentSuccess": "Student updated successfully"
+
 }

@@ -26,12 +26,9 @@
         <p class="error-message">
           {{ $t('NotFoundView.message') }}
         </p>
-        <p class="error-description">
-          {{ $t('NotFoundView.description') }}
-        </p>
-        
+
         <div class="current-route">
-          <strong>Ruta solicitada:</strong> 
+          <strong>{{ $t('NotFoundView.route') }}</strong> 
           <code>{{ $route.path }}</code>
         </div>
         
@@ -62,7 +59,7 @@
               <path d="M10 17L15 12L10 7M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             {{ $t('NotFoundView.login') }}
-          <!-- removed duplicate closing tag -->
+          </router-link>
           
           <router-link to="/register" class="help-link">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -78,7 +75,6 @@
               <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             {{ $t('NotFoundView.forgotPassword') }}
-          </router-link>
           </router-link>
         </div>
       </div>
@@ -295,6 +291,13 @@ export default {
   text-decoration: none;
 }
 
+.lang-switcher-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+}
+
 @media (max-width: 768px) {
   .not-found-card {
     padding: 32px 24px;
@@ -322,11 +325,5 @@ export default {
   .links-grid {
     grid-template-columns: 1fr;
   }
-  .lang-switcher-wrapper {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 100;
-}
 }
 </style>

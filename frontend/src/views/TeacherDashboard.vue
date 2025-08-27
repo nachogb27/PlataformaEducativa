@@ -672,8 +672,8 @@ export default {
         this.log('✅ Estudiante actualizado correctamente')
         this.closeEditModal();
 
-        alert('Estudiante actualizado correctamente');
-        
+        alert(this.$t('TeacherDashboard.updateStudentSuccess'));
+
       } catch (error) {
         this.log('❌ Error guardando estudiante:', error)
         this.editError = error.message || 'Error al guardar los cambios';
@@ -683,7 +683,7 @@ export default {
     },
 
     async deleteStudent(student) {
-      if (confirm(`¿Estás seguro de que deseas eliminar a ${student.name} ${student.lastName} de tu lista?`)) {
+      if (confirm(this.$t('TeacherDashboard.deleteConfirm', { name: student.name, surname: student.lastName }))) {
         try {
           this.log('🗑️ Eliminando estudiante:', student)
           await dataService.deleteStudent(student.id)
@@ -692,10 +692,10 @@ export default {
           this.students = this.students.filter(s => s.id !== student.id)
           
           this.log('✅ Estudiante eliminado correctamente')
-          alert(`${student.name} ${student.lastName} ha sido eliminado de tu lista`)
+          alert(this.$t('TeacherDashboard.deleteStudentSuccess', { name: student.name, surname: student.lastName }))
         } catch (error) {
           this.log('❌ Error eliminando estudiante:', error)
-          alert('Error al eliminar el estudiante: ' + error.message)
+          alert(this.$t('TeacherDashboard.deleteStudentError', { message: error.message }))
         }
       }
     }

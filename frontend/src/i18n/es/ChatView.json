@@ -23,5 +23,8 @@
   "messages": "mensajes",
   "loadingMessages": "Cargando mensajes...",
   "noMessages": "No hay mensajes en esta conversación",
-  "typeMessage": "Escribe un mensaje..."
+  "typeMessage": "Escribe un mensaje...",
+  "connecting": "Conectando...",
+  "connected": "En línea",
+  "disconnected": "Desconectado"
 }

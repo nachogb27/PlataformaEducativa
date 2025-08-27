@@ -38,6 +38,20 @@
   "noAvailableStudents": "No students available to assign",
   "create": "Create Subject",
   "assignedByTeachers": "Will be assigned by the teacher",
-  "enrolled": "Enrolled"
-  
+  "enrolled": "Enrolled",
+  "createSubjectComplete": "Subject created successfully!",
+  "createSubjectError": "Error creating subject: {message}",
+  "deleteSubjectQuestion": "Are you sure you want to delete the subject \"{subject}\"? This action will also remove all student enrollments.",
+  "deleteSubjectComplete": "Subject deleted successfully!",
+  "deleteSubjectError": "Error deleting subject: {message}",
+  "joinSubjectQuestion": "Are you sure you want to start teaching the subject \"{subject}\"?",
+  "joinSubjectComplete": "You are now teaching the subject \"{subject}\"!",
+  "joinSubjectError": "Error starting to teach the subject: {message}",
+  "updateSubjectComplete": "Subject updated successfully!",
+  "updateSubjectError": "Error updating subject: {message}",
+  "studentAssigned": "Student {name} {surnames} has been assigned to the subject",
+  "removeStudentQuestion": "Are you sure you want to remove {name} {surnames} from this subject?",
+  "studentRemoved": "Student {name} {surnames} has been removed from the subject",
+  "removeStudentError": "Error removing student: {message}"
+
 }

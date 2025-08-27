@@ -19,5 +19,13 @@
   "readonlyUsername": "Username cannot be changed",
   "subjects": "My Subjects",
   "subjectName": "Subject Name",
-  "studentCount": "students"
+  "studentCount": "students",
+  "back": "Back",
+  "deleteAvatar": "Delete photo",
+  "aws": "Stored in AWS S3",
+  "uploadingS3": "Uploading to S3...",
+  "uploadComplete": "Upload complete!",
+  "deleteAvatarQuestion": "Are you sure you want to delete your profile photo?",
+  "deleteAvatarComplete": "Profile photo deleted successfully!",
+  "deleteAvatarError": "Error deleting profile photo: {message}"
 }

@@ -6,7 +6,7 @@
     <div class="profile-header">
       <div class="header-content">
         <h1>{{ $t('ProfileView.title') }}</h1>
-        <button @click="goBack" class="back-button" :title="$t('ProfileView.cancel')">
+        <button @click="goBack" class="back-button" :title="$t('ProfileView.back')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M20 11H7.83L13.42 5.41L12 4L4 12L12 20L13.41 18.59L7.83 13H20V11Z" fill="currentColor"/>
           </svg>
@@ -42,7 +42,7 @@
               <!-- 🆕 Indicador de carga mejorado -->
               <div v-if="uploadingAvatar" class="upload-overlay">
                 <div class="upload-spinner"></div>
-                <span class="upload-text">Subiendo a S3...</span>
+                <span class="upload-text">{{ $t('ProfileView.uploadingS3') }}</span>
               </div>
 
               <div class="avatar-actions">
@@ -61,7 +61,7 @@
                   v-if="profile.avatar" 
                   @click="deleteAvatar" 
                   class="delete-avatar-button" 
-                  title="Eliminar foto" 
+                  :title="$t('ProfileView.deleteAvatar')" 
                   :disabled="uploadingAvatar"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -84,7 +84,7 @@
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="#f39c12"/>
                 </svg>
-                Almacenado en AWS S3
+                {{ $t('ProfileView.aws') }}
               </small>
             </div>
           </div>
@@ -335,7 +335,7 @@ export default {
         }
 
         console.log('✅ Avatar subido exitosamente a S3:', result.avatarUrl)
-        alert('¡Avatar actualizado exitosamente!')
+        alert(this.$t('ProfileView.uploadComplete'))
         
       } catch (error) {
         console.error('❌ Error subiendo imagen:', error)
@@ -347,12 +347,7 @@ export default {
     },
 
     async deleteAvatar() {
-      if (!this.profile.avatar) {
-        alert('No hay avatar para eliminar')
-        return
-      }
-
-      if (!confirm('¿Estás seguro de que deseas eliminar tu foto de perfil?')) {
+      if (!confirm(this.$t('ProfileView.deleteAvatarQuestion'))) {
         return
       }
 
@@ -379,11 +374,11 @@ export default {
           authService.setUser(currentUser)
         }
 
-        alert('Avatar eliminado exitosamente')
-        
+        alert(this.$t('ProfileView.deleteAvatarComplete'))
+
       } catch (error) {
         console.error('❌ Error eliminando avatar:', error)
-        alert('Error al eliminar avatar: ' + error.message)
+        alert(this.$t('ProfileView.deleteAvatarError', { message: error.message }))
       }
     },
 
@@ -790,7 +785,18 @@ export default {
   gap: 8px;
 }
 
-.change-avatar-button,
+.change-avatar-button{
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
 .delete-avatar-button {
   width: 36px;
   height: 36px;

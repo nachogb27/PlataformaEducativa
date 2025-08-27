@@ -19,5 +19,13 @@
   "readonlyUsername": "El nombre de usuario no se puede modificar",
   "subjects": "Mis Asignaturas",
   "subjectName": "Nombre de la asignatura",
-  "studentCount": "estudiantes"
+  "studentCount": "estudiantes",
+  "back": "Volver",
+  "deleteAvatar": "Eliminar foto",
+  "aws": "Almacenado en AWS S3",
+  "uploadingS3": "Subiendo a S3...",
+  "uploadComplete": "¡Subida completa!",
+  "deleteAvatarQuestion": "¿Estás seguro de que deseas eliminar tu foto de perfil?",
+  "deleteAvatarComplete": "¡Foto de perfil eliminada exitosamente!",
+  "deleteAvatarError": "Error al eliminar la foto de perfil: {message}"
 }

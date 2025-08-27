@@ -237,9 +237,9 @@ export default {
   computed: {
     connectionText() {
       switch (this.connectionStatus) {
-        case 'connected': return 'En línea'
-        case 'connecting': return 'Conectando...'
-        default: return 'Desconectado'
+        case 'connected': return this.$t('ChatView.connected')
+        case 'connecting': return this.$t('ChatView.connecting')
+        default: return this.$t('ChatView.disconnected')
       }
     }
   },
@@ -370,7 +370,7 @@ export default {
           this.scrollToBottom();
         }
       }
-      this.showNotification(`Nuevo mensaje de ${data.senderName}`, 'info');
+      this.showNotification(`Nuevo mensaje`);
       break;
 
     case 'message_sent':

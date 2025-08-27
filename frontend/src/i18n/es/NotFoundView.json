@@ -1,5 +1,11 @@
 {
   "title": "Página no encontrada",
   "message": "La página que buscas no existe.",
-  "goHome": "Ir al Inicio"
+  "goHome": "Ir al Inicio",
+  "login": "Iniciar sesión",
+  "register": "Registrarse",
+  "forgotPassword": "¿Olvidaste tu contraseña?",
+  "suggestions": "Sugerencias",
+  "description": "Descripción",
+  "route": "Ruta solicitada"
 }

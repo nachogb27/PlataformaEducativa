@@ -45,7 +45,10 @@
   "chat": "Chat",
   "logout": "Cerrar sesión",
   "paginationInfo": "Mostrando {start} - {end} de {total} estudiantes",
-  "email": "Email"
-
+  "email": "Email",
+  "deleteConfirm": "¿Estás seguro de que deseas eliminar a {name} {surname} de tu lista?",
+  "deleteStudentSuccess": "{name} {surname} ha sido eliminado de tu lista",
+  "deleteStudentError": "Error al eliminar el estudiante: {message}",
+  "updateStudentSuccess": "Estudiante actualizado correctamente"
 
 }

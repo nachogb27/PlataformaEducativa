@@ -21,7 +21,7 @@ function loadLocaleMessages() {
 }
 
 const i18n = new VueI18n({
-  locale: 'es', // Idioma predeterminado
+  locale: 'es', 
   fallbackLocale: 'en',
   messages: loadLocaleMessages()
 })

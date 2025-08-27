@@ -425,19 +425,19 @@ export default {
     
     async joinAsTeacher(subject) {
       if (this.joining) return
-      
-      const confirmMessage = `¿Confirmas que deseas empezar a impartir la asignatura "${subject.subject_name}"?`
+
+      const confirmMessage =  this.$t('SubjectsManager.joinSubjectQuestion', { subject: subject.subject_name })
       if (!confirm(confirmMessage)) return
       
       this.joining = true
       
       try {
         await dataService.joinAsTeacher(subject.id)
-        alert('Ahora impartes esta asignatura')
+        alert(this.$t('SubjectsManager.joinSubjectComplete'), { subject: subject.subject_name })
         
         await this.loadTeacherData()
       } catch (error) {
-        alert('Error al unirse como profesor: ' + error.message)
+        alert(this.$t('SubjectsManager.joinAsTeacherError', { message: error.message }))
       } finally {
         this.joining = false
       }
@@ -458,12 +458,12 @@ export default {
       
       try {
         await dataService.createSubject(this.subjectForm.name)
-        alert('Asignatura creada exitosamente')
-        
+        alert(this.$t('SubjectsManager.createSubjectComplete'))
+
         this.closeModals()
         await this.loadTeacherData()
       } catch (error) {
-        this.modalError = error.message || 'Error al crear la asignatura'
+        this.modalError = error.message || this.$t('SubjectsManager.createSubjectError')
       } finally {
         this.saving = false
       }
@@ -477,28 +477,28 @@ export default {
       
       try {
         await dataService.updateSubject(this.subjectForm.id, this.subjectForm.name)
-        alert('Asignatura actualizada exitosamente')
-        
+        alert(this.$t('SubjectsManager.updateSubjectComplete'), { subject: this.subjectForm.name })
+
         this.closeModals()
         await this.loadTeacherData()
       } catch (error) {
-        this.modalError = error.message || 'Error al actualizar la asignatura'
+        this.modalError = error.message || this.$t('SubjectsManager.updateSubjectError')
       } finally {
         this.saving = false
       }
     },
     
     async deleteSubject(subject) {
-      const confirmMessage = `¿Estás seguro de que deseas eliminar la asignatura "${subject.subject_name}"? Esta acción eliminará también todas las inscripciones de estudiantes.`
+      const confirmMessage = this.$t('SubjectsManager.deleteSubjectQuestion', { subject: subject.subject_name })
       if (!confirm(confirmMessage)) return
       
       try {
         await dataService.deleteSubject(subject.id)
-        alert('Asignatura eliminada exitosamente')
+        alert(this.$t('SubjectsManager.deleteSubjectComplete'))
         
         await this.loadTeacherData()
       } catch (error) {
-        alert('Error al eliminar la asignatura: ' + error.message)
+        alert(this.$t('SubjectsManager.deleteSubjectError', { message: error.message }))
       }
     },
     
@@ -532,14 +532,14 @@ export default {
           this.subjects[subjectIndex].studentCount = this.assignedStudents.length
         }
         
-        alert(`${student.name} ${student.surnames} ha sido asignado a la asignatura`)
+        alert(this.$t('SubjectsManager.studentAssigned', { name: student.name, surnames: student.surnames }))
       } catch (error) {
         alert('Error asignando estudiante: ' + error.message)
       }
     },
     
     async removeStudentFromSubject(student) {
-      const confirmMessage = `¿Estás seguro de que deseas quitar a ${student.name} ${student.surnames} de esta asignatura?`
+      const confirmMessage = this.$t('SubjectsManager.removeStudentQuestion', { name: student.name, surnames: student.surnames })
       if (!confirm(confirmMessage)) return
       
       try {
@@ -553,9 +553,9 @@ export default {
           this.subjects[subjectIndex].studentCount = this.assignedStudents.length
         }
         
-        alert(`${student.name} ${student.surnames} ha sido quitado de la asignatura`)
+        alert(this.$t('SubjectsManager.studentRemoved', { name: student.name, surnames: student.surnames }))
       } catch (error) {
-        alert('Error quitando estudiante: ' + error.message)
+        alert(this.$t('SubjectsManager.removeStudentError', { message: error.message }))
       }
     },
     
