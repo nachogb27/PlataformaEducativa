@@ -19,13 +19,11 @@ module.exports = defineConfig({
       }
     },
     headers: {
-      // Configuraciones CORS y CSP muy permisivas para desarrollo
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': '*',
       'Access-Control-Allow-Headers': '*',
       'Cross-Origin-Opener-Policy': 'unsafe-none',
       'Cross-Origin-Embedder-Policy': 'unsafe-none',
-      // CSP permisivo para desarrollo
       'Content-Security-Policy': "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline'; frame-src *; connect-src *; font-src *; img-src * data: blob:;"
     }
   }

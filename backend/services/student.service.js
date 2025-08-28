@@ -22,7 +22,7 @@ class StudentService {
       id: relation.subject.id,
       name: relation.subject.subject_name,
       teacher: `${relation.teacher.name} ${relation.teacher.surnames}`,
-      credits: Math.floor(Math.random() * 6) + 3, // Temporal
+      credits: Math.floor(Math.random() * 6) + 3,
       status: 'Cursando'
     }));
   }

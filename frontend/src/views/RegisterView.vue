@@ -159,14 +159,14 @@ export default {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       this.emailError = '';
       if (this.form.email && !emailRegex.test(this.form.email)) {
-        this.emailError = 'Por favor ingresa un email válido';
+        this.emailError = this.$t('RegisterView.invalidEmail');
       }
     },
     
     validatePassword() {
       this.passwordError = '';
       if (this.form.confirmPassword && this.form.password !== this.form.confirmPassword) {
-        this.passwordError = 'Las contraseñas no coinciden';
+        this.passwordError = this.$t('RegisterView.passwordMismatch');
       }
     },
     
@@ -210,7 +210,7 @@ export default {
           this.errorMessage = data.error || 'Error en el registro';
         }
       } catch (error) {
-        this.errorMessage = 'Error de conexión. Inténtalo más tarde.';
+        this.errorMessage = this.$t('RegisterView.connectionError');
       } finally {
         this.loading = false;
       }

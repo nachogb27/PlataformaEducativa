@@ -7,55 +7,82 @@ const path = require('path');
 
 class ChatService {
   async getAvailableUsers(userId) {
-    try {
-      const user = await userRepository.findById(userId);
+  try {
+    const user = await userRepository.findById(userId);
 
-      if (!user) {
-        throw new Error('Usuario no encontrado');
-      }
-
-      let availableUsers = [];
-
-      if (user.roleData.role_name === 'student') {
-        const relations = await relationRepository.findTeachersByStudent(userId);
-
-        availableUsers = relations.map(relation => ({
-          userId: relation.teacher.id,
-          name: relation.teacher.name,
-          surnames: relation.teacher.surnames,
-          email: relation.teacher.email,
-          username: relation.teacher.username || relation.teacher.email,
-          role: 'teacher',
-          avatar: this.buildAvatarUrl(relation.teacher.avatar)
-        }));
-
-      } else if (user.roleData.role_name === 'teacher') {
-        const relations = await relationRepository.findStudentsByTeacher(userId);
-
-        const uniqueStudents = new Map();
-        relations.forEach(relation => {
-          uniqueStudents.set(relation.student.id, {
-            userId: relation.student.id,
-            name: relation.student.name,
-            surnames: relation.student.surnames,
-            email: relation.student.email,
-            username: relation.student.username || relation.student.email,
-            role: 'student',
-            avatar: this.buildAvatarUrl(relation.student.avatar)
-          });
-        });
-
-        availableUsers = Array.from(uniqueStudents.values());
-      }
-
-      console.log(`✅ Usuarios disponibles para ${user.roleData.role_name}:`, availableUsers.length);
-      return availableUsers;
-
-    } catch (error) {
-      console.error('❌ Error obteniendo usuarios disponibles:', error);
-      throw error;
+    if (!user) {
+      throw new Error('Usuario no encontrado');
     }
+
+    let availableUsers = [];
+
+    if (user.roleData.role_name === 'student') {
+      const relations = await relationRepository.findTeachersByStudent(userId);
+
+      const uniqueTeachers = new Map();
+      const seenNames = new Set(); 
+      
+      relations.forEach((relation) => {
+        const teacher = relation.teacher;
+        const teacherId = teacher.id.toString();
+        const fullName = `${teacher.name} ${teacher.surnames}`.toLowerCase().trim();
+        
+        if (!uniqueTeachers.has(teacherId) && !seenNames.has(fullName)) {
+          uniqueTeachers.set(teacherId, {
+            userId: teacher.id,
+            name: teacher.name,
+            surnames: teacher.surnames,
+            email: teacher.email,
+            username: teacher.username || teacher.email,
+            role: 'teacher',
+            avatar: this.buildAvatarUrl(teacher.avatar)
+          });
+          seenNames.add(fullName);
+        }
+      });
+
+      availableUsers = Array.from(uniqueTeachers.values());
+
+    } else if (user.roleData.role_name === 'teacher') {
+      const relations = await relationRepository.findStudentsByTeacher(userId);
+
+      const uniqueStudents = new Map();
+      const seenNames = new Set();
+      
+      relations.forEach(relation => {
+        const student = relation.student;
+        const studentId = student.id.toString();
+        const fullName = `${student.name} ${student.surnames}`.toLowerCase().trim();
+        
+        if (!uniqueStudents.has(studentId) && !seenNames.has(fullName)) {
+          uniqueStudents.set(studentId, {
+            userId: student.id,
+            name: student.name,
+            surnames: student.surnames,
+            email: student.email,
+            username: student.username || student.email,
+            role: 'student',
+            avatar: this.buildAvatarUrl(student.avatar)
+          });
+          seenNames.add(fullName);
+        }
+      });
+
+      availableUsers = Array.from(uniqueStudents.values());
+    }
+
+    availableUsers.sort((a, b) => 
+      `${a.name} ${a.surnames}`.localeCompare(`${b.name} ${b.surnames}`)
+    );
+
+    console.log(`Usuarios únicos encontrados para ${user.roleData.role_name}:`, availableUsers.length);
+    return availableUsers;
+
+  } catch (error) {
+    console.error('Error obteniendo usuarios disponibles:', error);
+    throw error;
   }
+}
 
   async getConversations(userId) {
     try {

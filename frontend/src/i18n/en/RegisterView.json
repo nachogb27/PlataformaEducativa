@@ -9,5 +9,8 @@
   "confirmPassword": "Confirm Password",
   "teacherToken": "Teacher Token",
   "teacherTokenPlaceholder": "Enter teacher token (provided by admin)",
-  "registering": "Registering..."
+  "registering": "Registering...",
+  "invalidEmail": "Please enter a valid email",
+  "passwordMismatch": "Passwords do not match",
+  "connectionError": "Connection error. Please try again later."
 }

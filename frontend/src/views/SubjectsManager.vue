@@ -28,6 +28,8 @@
       </div>
     </div>
 
+    
+
     <div class="subjects-content">
       <div v-if="debugMode" class="debug-info">
         <h4>🔍 {{ $t('SubjectsManager.debug') }}</h4>
@@ -138,7 +140,7 @@
           <div v-for="subject in subjects" :key="subject.id" class="subject-card student-card">
             <div class="card-header">
               <h3>{{ subject.name }}</h3>
-              <span class="status-badge enrolled">{{ $t('SubjectsManager.enrolled') }}:</span>
+              <span class="status-badge enrolled">{{ $t('SubjectsManager.enrolled') }}</span>
             </div>
             <div class="card-content">
               <div class="teacher-info">

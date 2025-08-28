@@ -25,7 +25,6 @@
       </div>
 
       <div v-else class="profile-layout">
-        <!-- Sección de avatar y datos básicos -->
         <div class="profile-card">
           <div class="avatar-section">
             <div class="avatar-container">
@@ -39,7 +38,6 @@
                 {{ profile.name.charAt(0) }}{{ profile.surnames.charAt(0) }}
               </div>
               
-              <!-- 🆕 Indicador de carga mejorado -->
               <div v-if="uploadingAvatar" class="upload-overlay">
                 <div class="upload-spinner"></div>
                 <span class="upload-text">{{ $t('ProfileView.uploadingS3') }}</span>
@@ -778,26 +776,31 @@ export default {
 }
 
 .avatar-actions {
+  position: relative;
+}
+
+.change-avatar-button {
   position: absolute;
   bottom: -8px;
   right: -8px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
 }
 
-.change-avatar-button{
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
 .delete-avatar-button {
+  position: absolute;
+  bottom: -8px;
+  left: -8px;
   width: 36px;
   height: 36px;
   border: none;
@@ -808,6 +811,8 @@ export default {
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #f56565, #e53e3e);
+  color: white;
 }
 
 .change-avatar-button {

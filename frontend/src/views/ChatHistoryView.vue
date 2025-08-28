@@ -67,7 +67,6 @@
       </div>
 
       <div v-else class="conversations-grid">
-        <!-- Filtros -->
         <div class="filters-section">
           <div class="filter-group">
             <label>{{ $t('ChatHistoryView.searchConversations') }}</label>
@@ -101,7 +100,6 @@
           </div>
         </div>
 
-        <!-- Lista de conversaciones -->
         <div class="conversations-list">
           <div 
             v-for="conversation in filteredAndSortedConversations" 
@@ -182,7 +180,6 @@
           </div>
         </div>
 
-        <!-- Paginación -->
         <div v-if="totalPages > 1" class="pagination">
           <button 
             @click="currentPage = Math.max(1, currentPage - 1)"
@@ -213,7 +210,6 @@
       </div>
     </div>
 
-    <!-- Modal de detalles de conversación -->
     <div v-if="selectedConversation" class="modal-overlay" @click="closeDetailsModal">
       <div class="modal-content details-modal" @click.stop>
         <div class="modal-header">
@@ -309,7 +305,6 @@
       </div>
     </div>
 
-    <!-- Notificaciones -->
     <div v-if="notification" :class="['notification', notification.type]">
       {{ notification.message }}
     </div>

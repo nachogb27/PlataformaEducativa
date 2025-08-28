@@ -264,28 +264,57 @@ export default {
     },
 
     async loadAvailableUsers() {
-      try {
-        this.loadingUsers = true
-        const response = await fetch('http://localhost:3000/api/chat/available-users', {
-          headers: {
-            'Authorization': `Bearer ${authService.getToken()}`,
-            'Content-Type': 'application/json'
-          }
-        })
-
-        if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Error cargando usuarios')
-        }
-
-        this.availableUsers = await response.json()
-        console.log('✅ Usuarios disponibles cargados:', this.availableUsers.length)
-      } catch (error) {
-        console.error('❌ Error cargando usuarios:', error)
-        this.showNotification('Error cargando usuarios: ' + error.message, 'error')
-      } finally {
-        this.loadingUsers = false
+       try {
+    this.loadingUsers = true
+    const response = await fetch('http://localhost:3000/api/chat/available-users', {
+      headers: {
+        'Authorization': `Bearer ${authService.getToken()}`,
+        'Content-Type': 'application/json'
       }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error cargando usuarios')
+    }
+
+    const usersData = await response.json()
+    
+    const uniqueUsersMap = new Map()
+    const seenNames = new Set()
+    
+    usersData.forEach(user => {
+      const userId = (user.userId || user.id).toString()
+      const fullName = `${user.name} ${user.surnames}`.toLowerCase().trim()
+      
+      if (!uniqueUsersMap.has(userId) && !seenNames.has(fullName)) {
+        uniqueUsersMap.set(userId, {
+          userId: user.userId || user.id,
+          id: user.userId || user.id, 
+          name: user.name,
+          surnames: user.surnames,
+          email: user.email,
+          username: user.username,
+          role: user.role,
+          avatar: user.avatar
+        })
+        seenNames.add(fullName)
+      }
+    })
+    
+    this.availableUsers = Array.from(uniqueUsersMap.values()).sort((a, b) => 
+      `${a.name} ${a.surnames}`.localeCompare(`${b.name} ${b.surnames}`)
+    )
+    
+    console.log('Usuarios únicos cargados:', this.availableUsers.length)
+    console.log('Usuarios:', this.availableUsers.map(u => `${u.name} ${u.surnames} (ID: ${u.userId})`))
+    
+  } catch (error) {
+    console.error('Error cargando usuarios:', error)
+    this.showNotification('Error cargando usuarios: ' + error.message, 'error')
+  } finally {
+    this.loadingUsers = false
+  }
     },
 
     connectWebSocket() {

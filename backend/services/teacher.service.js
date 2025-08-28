@@ -12,7 +12,7 @@ class TeacherService {
       email: relation.student.email,
       avatar: this.buildAvatarUrl(relation.student.avatar),
       subject: relation.subject.subject_name,
-      grade: (Math.random() * 3 + 7).toFixed(1) // Temporal
+      grade: (Math.random() * 3 + 7).toFixed(1) 
     }));
   }
 

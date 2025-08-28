@@ -2,25 +2,12 @@ const authService = require('../services/auth.service');
 
 class AuthController {
   async login(req, res) {
-    console.log('🔍 === INICIO LOGIN DEBUG ===');
-    console.log('1. Request body:', req.body);
-    console.log('2. Headers:', req.headers);
-    console.log('3. URL:', req.url);
-    console.log('4. Method:', req.method);
-    
     try {
-      console.log('5. Llamando a authService.login...');
+
       const result = await authService.login(req.body);
-      console.log('6. Login exitoso:', result);
+
       res.json(result);
     } catch (error) {
-      console.error('❌ === ERROR EN LOGIN ===');
-      console.error('Error completo:', error);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-      console.error('Error name:', error.name);
-      console.error('=== FIN ERROR ===');
-      
       if (!res.headersSent) {
         res.status(401).json({ 
           error: error.message || 'Error de autenticación',
@@ -93,7 +80,7 @@ class AuthController {
       res.status(400).json({ error: error.message });
     }
   }
-
+  
   async loginWithGoogleCode(req, res) {
     try {
       const { code } = req.body;
